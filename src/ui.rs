@@ -12,16 +12,40 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
     // Main layout
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(0)])
+        .constraints([Constraint::Length(4), Constraint::Min(0)])
         .split(frame.size());
 
     // Header
-    frame.render_widget(
-        Block::new()
-            .borders(Borders::TOP)
-            .title(" Mk.03 Rust Studio - TERA "),
-        main_layout[0],
-    );
+    let header_lines = vec![
+        Line::from(vec![
+            Span::styled(" Mk.03 Rust Studio - TERA ", Style::default().bold()),
+            Span::raw(" | "),
+            Span::styled(
+                format!("{} / {}", snapshot.epoch, snapshot.season),
+                Style::default().fg(Color::Cyan),
+            ),
+        ]),
+        Line::from(vec![
+            Span::raw("대기 흐름: "),
+            Span::styled(
+                &snapshot.season_effect.label,
+                Style::default().fg(Color::Yellow).bold(),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                format!(
+                    "온도 {:+.1}  사기 {:+.1}%  수확 {:+.1}%  위험 {:+.1}%",
+                    snapshot.season_effect.temperature * 10.0,
+                    snapshot.season_effect.morale_shift,
+                    snapshot.season_effect.yield_shift,
+                    snapshot.season_effect.risk_shift
+                ),
+                Style::default().fg(Color::White),
+            ),
+        ]),
+    ];
+    let header_paragraph = Paragraph::new(header_lines).block(Block::new().borders(Borders::TOP));
+    frame.render_widget(header_paragraph, main_layout[0]);
 
     // Create a vertical layout for the main content area
     let content_layout = Layout::default()
@@ -209,8 +233,19 @@ fn render_world_state_panel(
     let tick = snapshot.tick;
 
     let info_lines = vec![
-        Line::from(format!("Total Entities: {}", total_entities)),
-        Line::from(format!("Tick: {}", tick)),
+        Line::from(format!("Tick: {} | Entities: {}", tick, total_entities)),
+        Line::from(format!(
+            "Epoch: {} | Season: {}",
+            snapshot.epoch, snapshot.season
+        )),
+        Line::from(format!(
+            "대기: {} (ΔT {:+.1}, 사기 {:+.1}%, 수확 {:+.1}%, 위험 {:+.1}%)",
+            snapshot.season_effect.label,
+            snapshot.season_effect.temperature * 10.0,
+            snapshot.season_effect.morale_shift,
+            snapshot.season_effect.yield_shift,
+            snapshot.season_effect.risk_shift
+        )),
     ];
     let info_paragraph = Paragraph::new(info_lines);
     frame.render_widget(info_paragraph, panel_layout[0]);
@@ -351,6 +386,13 @@ impl<'a> Widget for MapWidget<'a> {
         let grid = &self.snapshot.grid;
         let center_x = area.x + area.width / 2;
         let center_y = area.y + area.height / 2;
+        let tick = self.snapshot.tick;
+
+        let (season_tint, glow_char) = match self.snapshot.season.as_str() {
+            "불꽃 절정" => (Color::LightRed, "░"),
+            "잿불 내림" => (Color::DarkGray, "▒"),
+            _ => (Color::LightGreen, "·"),
+        };
 
         for (&coord, hex) in &grid.hexes {
             // Convert axial to screen coordinates (flat-top hexes)
@@ -362,7 +404,11 @@ impl<'a> Widget for MapWidget<'a> {
 
             let hex_char = "█";
 
-            let mut color = hex.owner.color();
+            let mut color = if tick % 5 == 0 {
+                season_tint
+            } else {
+                hex.owner.color()
+            };
 
             // Twinkling effect for combat zones
             if self.snapshot.nuclear_hexes.contains(&coord) {
@@ -385,6 +431,20 @@ impl<'a> Widget for MapWidget<'a> {
                 if self.snapshot.tick % 2 == 0 {
                     color = Color::White; // Bright color for twinkling
                 }
+            }
+
+            // Ambient shimmer based on seasonal mood
+            if tick % 7 == 0
+                && screen_x >= area.x as i32
+                && screen_x + hex_width <= (area.x + area.width) as i32
+                && screen_y + 1 < (area.y + area.height) as i32
+            {
+                buf.set_string(
+                    screen_x as u16,
+                    (screen_y + 1) as u16,
+                    glow_char,
+                    Style::default().fg(season_tint),
+                );
             }
 
             // Draw the hex character

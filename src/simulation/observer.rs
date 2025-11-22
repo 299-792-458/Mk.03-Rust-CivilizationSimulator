@@ -34,10 +34,20 @@ pub struct HexSnapshot {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct SeasonEffectSnapshot {
+    pub label: String,
+    pub temperature: f32,
+    pub morale_shift: f32,
+    pub yield_shift: f32,
+    pub risk_shift: f32,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct ObserverSnapshot {
     pub tick: u64,
     pub epoch: String,
     pub season: String,
+    pub season_effect: SeasonEffectSnapshot,
     pub all_metrics: AllNationMetrics,
     pub civ_state: AllNationCivState,
     pub grid: HexGridSnapshot,
@@ -53,6 +63,13 @@ impl ObserverSnapshot {
             tick: 0,
             epoch: "새벽".to_string(),
             season: "꽃피움 계절".to_string(),
+            season_effect: SeasonEffectSnapshot {
+                label: "온화한 바람".to_string(),
+                temperature: 0.0,
+                morale_shift: 0.0,
+                yield_shift: 0.0,
+                risk_shift: 0.0,
+            },
             all_metrics: AllNationMetrics::default(),
             civ_state: AllNationCivState::default(),
             grid: HexGridSnapshot::default(),
@@ -68,6 +85,7 @@ impl ObserverSnapshot {
         tick: u64,
         epoch: String,
         season: String,
+        season_effect: SeasonEffectSnapshot,
         metrics: &AllNationMetrics,
         civ_state: AllNationCivState,
         grid: HexGridSnapshot,
@@ -79,6 +97,7 @@ impl ObserverSnapshot {
         self.tick = tick;
         self.epoch = epoch;
         self.season = season;
+        self.season_effect = season_effect;
         self.all_metrics = metrics.clone();
         self.civ_state = civ_state;
         self.grid = grid;

@@ -60,6 +60,7 @@ impl SimulationWorld {
                 ai_state_transition_system,
                 combat_cleanup_system, // Clean up combat from previous tick
                 economy_system,
+                environment_system,
                 civilization_system,
                 technology_system,
                 warfare_system, // Handles starting new combat
@@ -112,6 +113,7 @@ impl SimulationWorld {
             let (epoch, season) = world_meta.epoch_for_tick(tick);
             (epoch.to_string(), season.to_string())
         };
+        let season_effect = seasonal_effect_for(&season, tick);
 
         let events = {
             let log = self.world.resource::<WorldEventLog>();
@@ -159,6 +161,7 @@ impl SimulationWorld {
                 tick,
                 epoch,
                 season,
+                season_effect,
                 &metrics,
                 civ_state,
                 grid_snapshot,
@@ -168,6 +171,42 @@ impl SimulationWorld {
                 nuclear.keys().cloned().collect(),
             );
         }
+    }
+}
+
+fn seasonal_effect_for(season: &str, tick: u64) -> observer::SeasonEffectSnapshot {
+    // Animated seasonal shifts to drive UI and minor simulation flavor.
+    // Uses deterministic wave so tick speed affects intensity.
+    let wave = ((tick % 32) as f32 / 32.0 * std::f32::consts::TAU).sin();
+    match season {
+        "꽃피움 계절" => observer::SeasonEffectSnapshot {
+            label: "꽃가루 축제".to_string(),
+            temperature: 0.2 + 0.1 * wave,
+            morale_shift: 5.0,
+            yield_shift: 3.0,
+            risk_shift: -2.0,
+        },
+        "불꽃 절정" => observer::SeasonEffectSnapshot {
+            label: "태양 쇄도".to_string(),
+            temperature: 0.65 + 0.2 * wave,
+            morale_shift: -3.0,
+            yield_shift: 6.0,
+            risk_shift: 4.0,
+        },
+        "잿불 내림" => observer::SeasonEffectSnapshot {
+            label: "연기 어린 밤".to_string(),
+            temperature: -0.15 + 0.1 * wave,
+            morale_shift: -1.0,
+            yield_shift: -2.0,
+            risk_shift: 3.0,
+        },
+        _ => observer::SeasonEffectSnapshot {
+            label: "평온".to_string(),
+            temperature: 0.0,
+            morale_shift: 0.0,
+            yield_shift: 0.0,
+            risk_shift: 0.0,
+        },
     }
 }
 

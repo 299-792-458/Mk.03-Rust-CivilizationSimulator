@@ -1,6 +1,7 @@
 pub mod ai;
 pub mod civilization;
 pub mod economy;
+pub mod environment;
 pub mod events;
 pub mod logging;
 pub mod nuclear;
@@ -11,6 +12,7 @@ pub mod warfare;
 pub use ai::*;
 pub use civilization::*;
 pub use economy::*;
+pub use environment::*;
 pub use events::*;
 pub use logging::*;
 pub use nuclear::*;
