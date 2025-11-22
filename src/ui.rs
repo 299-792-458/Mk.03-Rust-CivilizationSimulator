@@ -447,17 +447,19 @@ impl<'a> Widget for MapWidget<'a> {
             }
 
             // Ambient shimmer based on seasonal mood
-            if tick % 7 == 0
-                && screen_x >= area.x as i32
-                && screen_x + hex_width <= (area.x + area.width) as i32
-                && screen_y + 1 < (area.y + area.height) as i32
-            {
-                buf.set_string(
-                    screen_x as u16,
-                    (screen_y + 1) as u16,
-                    glow_char,
-                    Style::default().fg(season_tint),
-                );
+            if tick % 7 == 0 {
+                let within = screen_x >= area.x as i32
+                    && screen_x + hex_width <= (area.x + area.width) as i32
+                    && screen_y + 1 >= area.y as i32
+                    && screen_y + 1 < (area.y + area.height) as i32;
+                if within {
+                    buf.set_string(
+                        screen_x as u16,
+                        (screen_y + 1) as u16,
+                        glow_char,
+                        Style::default().fg(season_tint),
+                    );
+                }
             }
 
             // Draw the hex character
