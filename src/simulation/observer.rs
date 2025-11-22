@@ -42,6 +42,13 @@ pub struct SeasonEffectSnapshot {
     pub risk_shift: f32,
 }
 
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct WorldOverlaySnapshot {
+    pub war_fatigue: f32,
+    pub fallout: f32,
+    pub resource_richness: f32,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct ObserverSnapshot {
     pub tick: u64,
@@ -51,6 +58,7 @@ pub struct ObserverSnapshot {
     pub all_metrics: AllNationMetrics,
     pub civ_state: AllNationCivState,
     pub grid: HexGridSnapshot,
+    pub overlay: WorldOverlaySnapshot,
     pub entities: Vec<EntitySnapshot>,
     pub events: Vec<WorldEvent>,
     pub combat_hexes: HashSet<AxialCoord>,
@@ -73,6 +81,7 @@ impl ObserverSnapshot {
             all_metrics: AllNationMetrics::default(),
             civ_state: AllNationCivState::default(),
             grid: HexGridSnapshot::default(),
+            overlay: WorldOverlaySnapshot::default(),
             entities: Vec::new(),
             events: Vec::new(),
             combat_hexes: HashSet::new(),
@@ -89,6 +98,7 @@ impl ObserverSnapshot {
         metrics: &AllNationMetrics,
         civ_state: AllNationCivState,
         grid: HexGridSnapshot,
+        overlay: WorldOverlaySnapshot,
         entities: Vec<EntitySnapshot>,
         events: Vec<WorldEvent>,
         combat_hexes: HashSet<AxialCoord>,
@@ -101,6 +111,7 @@ impl ObserverSnapshot {
         self.all_metrics = metrics.clone();
         self.civ_state = civ_state;
         self.grid = grid;
+        self.overlay = overlay;
         self.entities = entities;
         self.events = events;
         self.combat_hexes = combat_hexes;
