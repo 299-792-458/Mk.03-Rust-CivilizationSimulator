@@ -47,6 +47,8 @@ impl SimulationWorld {
         world.insert_resource(AllNationMetrics::default());
         world.insert_resource(AllNationCivState::default());
         world.insert_resource(NuclearBlasts::default());
+        world.insert_resource(WarFatigue::default());
+        world.insert_resource(WorldRichness::default());
         world.insert_resource(WorldTime::default());
         world.insert_resource(WorldMetadata::default());
         world.insert_resource(WorldEventLog::default());
@@ -65,6 +67,8 @@ impl SimulationWorld {
                 technology_system,
                 warfare_system, // Handles starting new combat
                 nuclear_decay_system,
+                richness_overlay_system,
+                war_fatigue_system,
                 territory_system,
                 event_generation_system,
                 logging_system,
@@ -95,6 +99,8 @@ impl SimulationWorld {
         let metrics = self.world.resource::<AllNationMetrics>().clone();
         let civ_state = self.world.resource::<AllNationCivState>().clone();
         let nuclear = self.world.resource::<NuclearBlasts>().0.clone();
+        let war_fatigue = self.world.resource::<WarFatigue>().intensity;
+        let richness = self.world.resource::<WorldRichness>().richness;
 
         // We need to construct a new HexGrid snapshot because the resource now holds entities.
         let grid_snapshot = {
@@ -165,6 +171,11 @@ impl SimulationWorld {
                 &metrics,
                 civ_state,
                 grid_snapshot,
+                observer::WorldOverlaySnapshot {
+                    war_fatigue,
+                    fallout: nuclear.values().map(|v| *v as f32).sum::<f32>(),
+                    resource_richness: richness,
+                },
                 entities,
                 events,
                 combat_hexes,

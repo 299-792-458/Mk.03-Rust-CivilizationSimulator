@@ -99,6 +99,17 @@ impl Default for AllNationMetrics {
 #[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
 pub struct NuclearBlasts(pub HashMap<crate::simulation::AxialCoord, u8>);
 
+#[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct WarFatigue {
+    pub intensity: f32,
+}
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct WorldRichness {
+    /// Aggregated richness score for TUI overlay (0..1)
+    pub richness: f32,
+}
+
 #[derive(Debug, Resource)]
 pub struct DeltaTime(pub f32);
 

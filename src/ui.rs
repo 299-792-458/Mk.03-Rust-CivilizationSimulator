@@ -67,14 +67,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
     frame.render_widget(map_widget, top_layout[1]);
 
     // Event Log Panel - Using a Table for alignment
-    let header_cells = [
-        "Nation",
-        "Tick",
-        "Category",
-        "Actor/Source",
-        "Details",
-        "Impact/Level",
-    ]
+    let header_cells = ["Nation", "Tick", "Category", "Actor/Source", "Details", "Impact/Level"]
     .iter()
     .map(|h| Cell::from(*h).style(Style::default().fg(Color::White).bold()));
     let header = Row::new(header_cells).height(1).bottom_margin(1);
@@ -200,12 +193,16 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
             Constraint::Length(5),
             Constraint::Length(10),
             Constraint::Length(15),
-            Constraint::Min(20),
-            Constraint::Length(15),
+            Constraint::Min(22),
+            Constraint::Length(18),
         ],
     )
     .header(header)
-    .block(Block::default().title("Event Log").borders(Borders::ALL));
+    .block(
+        Block::default()
+            .title("Event Log — 전쟁 피로/자원 풍부도는 좌측 패널 확인")
+            .borders(Borders::ALL),
+    );
 
     frame.render_widget(table, content_layout[1]);
 }
@@ -246,6 +243,22 @@ fn render_world_state_panel(
             snapshot.season_effect.yield_shift,
             snapshot.season_effect.risk_shift
         )),
+        Line::from(vec![
+            Span::styled(
+                format!("War Fatigue {:>5.1} ", snapshot.overlay.war_fatigue),
+                Style::default().fg(Color::Red),
+            ),
+            Span::raw("| "),
+            Span::styled(
+                format!("Fallout {:>4.0} ", snapshot.overlay.fallout),
+                Style::default().fg(Color::Yellow),
+            ),
+            Span::raw("| "),
+            Span::styled(
+                format!("Richness {:>4.0}%", snapshot.overlay.resource_richness * 100.0),
+                Style::default().fg(Color::Green),
+            ),
+        ]),
     ];
     let info_paragraph = Paragraph::new(info_lines);
     frame.render_widget(info_paragraph, panel_layout[0]);
