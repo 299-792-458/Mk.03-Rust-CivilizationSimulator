@@ -28,7 +28,6 @@ pub fn mark_nuclear_blast(
     center: AxialCoord,
     radius: i32,
     duration: u8,
-    hexes: &Query<&Hex>,
 ) -> HashSet<AxialCoord> {
     let mut impacted = HashSet::new();
     for (&coord, _) in blasts.0.iter() {

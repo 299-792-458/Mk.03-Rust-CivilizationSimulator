@@ -8,7 +8,7 @@ use crate::simulation::{
 pub fn war_fatigue_system(
     mut fatigue: ResMut<WarFatigue>,
     mut blasts: ResMut<NuclearBlasts>,
-    time: Res<WorldTime>,
+    _time: Res<WorldTime>,
     events: Res<WorldEventLog>,
     mut metrics: ResMut<AllNationMetrics>,
 ) {

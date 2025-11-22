@@ -1,4 +1,5 @@
 use std::io::{self, stdout};
+use std::panic;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
 
@@ -50,10 +51,19 @@ async fn main() -> anyhow::Result<()> {
             }
         }
     });
+    let ctrlc_notify = shutdown_notify.clone();
+    let ctrl_c_task = tokio::spawn(async move {
+        let _ = tokio::signal::ctrl_c().await;
+        ctrlc_notify.notify_waiters();
+    });
 
     // TUI Setup
     let mut terminal = init_terminal()?;
     let mut term_guard = TerminalGuard::new();
+    panic::set_hook(Box::new(|info| {
+        let _ = restore_terminal();
+        eprintln!("panic: {info}");
+    }));
     let mut app_should_run = true;
 
     while app_should_run {
@@ -108,6 +118,10 @@ async fn main() -> anyhow::Result<()> {
                 }
                 _ => {}
             }
+        }
+
+        if ctrl_c_task.is_finished() {
+            app_should_run = false;
         }
     }
 
