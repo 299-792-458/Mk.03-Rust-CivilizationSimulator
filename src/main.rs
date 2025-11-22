@@ -53,6 +53,7 @@ async fn main() -> anyhow::Result<()> {
 
     // TUI Setup
     let mut terminal = init_terminal()?;
+    let mut term_guard = TerminalGuard::new();
     let mut app_should_run = true;
 
     while app_should_run {
@@ -114,6 +115,7 @@ async fn main() -> anyhow::Result<()> {
     shutdown_notify.notify_waiters();
     simulation_task.await?;
     restore_terminal()?;
+    term_guard.disarm();
 
     Ok(())
 }
@@ -133,4 +135,27 @@ fn restore_terminal() -> io::Result<()> {
         .execute(LeaveAlternateScreen)?
         .execute(event::DisableMouseCapture)?;
     Ok(())
+}
+
+/// Ensures terminal is restored on panic/early-return.
+struct TerminalGuard {
+    armed: bool,
+}
+
+impl TerminalGuard {
+    fn new() -> Self {
+        Self { armed: true }
+    }
+
+    fn disarm(&mut self) {
+        self.armed = false;
+    }
+}
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        if self.armed {
+            let _ = restore_terminal();
+        }
+    }
 }
