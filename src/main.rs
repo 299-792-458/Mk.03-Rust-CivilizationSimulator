@@ -1,0 +1,136 @@
+use std::io::{self, stdout};
+use std::sync::{Arc, RwLock};
+use std::time::Duration;
+
+use crossterm::{
+    ExecutableCommand,
+    event::{self, Event, KeyCode},
+    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+};
+use ratatui::{Terminal, prelude::*};
+use tokio::sync::{Notify, watch};
+
+mod simulation;
+mod ui;
+
+use simulation::{ObserverSnapshot, SimulationConfig, SimulationWorld};
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Simulation Setup
+    let config = SimulationConfig {
+        tick_duration: Duration::from_secs(1),
+        grid_radius: 24,
+        ..Default::default()
+    };
+    let initial_tick_duration = config.tick_duration;
+
+    let (tick_duration_tx, mut tick_duration_rx) = watch::channel(initial_tick_duration);
+
+    let observer = Arc::new(RwLock::new(ObserverSnapshot::default()));
+    let shutdown_notify = Arc::new(Notify::new());
+
+    let mut simulation = SimulationWorld::with_observer(config, observer.clone());
+    let notify_for_simulation = shutdown_notify.clone();
+    let simulation_task = tokio::spawn(async move {
+        let mut interval = tokio::time::interval(*tick_duration_rx.borrow());
+        loop {
+            tokio::select! {
+                _ = interval.tick() => simulation.tick(),
+                result = tick_duration_rx.changed() => {
+                    if result.is_ok() {
+                        let new_duration = *tick_duration_rx.borrow();
+                        interval = tokio::time::interval(new_duration);
+                    } else {
+                        // Channel closed, time to shut down
+                        break;
+                    }
+                },
+                _ = notify_for_simulation.notified() => break,
+            }
+        }
+    });
+
+    // TUI Setup
+    let mut terminal = init_terminal()?;
+    let mut app_should_run = true;
+
+    while app_should_run {
+        terminal.draw(|frame| {
+            let snapshot = observer.read().expect("Observer lock is poisoned").clone();
+            let tick_duration = *tick_duration_tx.borrow();
+            ui::render(frame, &snapshot, tick_duration);
+        })?;
+
+        if event::poll(Duration::from_millis(100))? {
+            match event::read()? {
+                Event::Key(key) => match key.code {
+                    KeyCode::Char('q') => app_should_run = false,
+                    KeyCode::Char('+') | KeyCode::Char('=') => {
+                        let current_duration = *tick_duration_tx.borrow();
+                        let new_duration = (current_duration / 2).max(Duration::from_millis(1));
+                        tick_duration_tx.send(new_duration).ok();
+                    }
+                    KeyCode::Char('-') => {
+                        let current_duration = *tick_duration_tx.borrow();
+                        let new_duration = current_duration * 2;
+                        tick_duration_tx.send(new_duration).ok();
+                    }
+                    KeyCode::Char('r') => {
+                        tick_duration_tx.send(initial_tick_duration).ok();
+                    }
+                    _ => {}
+                },
+                Event::Mouse(mouse) => {
+                    if mouse.kind == event::MouseEventKind::Down(event::MouseButton::Left) {
+                        // These coordinates are hardcoded based on the UI layout
+                        // A more robust solution would calculate them dynamically
+                        let button_y = 15; // Approximate line number for the buttons
+                        if mouse.row == button_y {
+                            if (1..=3).contains(&mouse.column) {
+                                // [-]
+                                let current_duration = *tick_duration_tx.borrow();
+                                let new_duration = current_duration * 2;
+                                tick_duration_tx.send(new_duration).ok();
+                            } else if (5..=7).contains(&mouse.column) {
+                                // [+]
+                                let current_duration = *tick_duration_tx.borrow();
+                                let new_duration =
+                                    (current_duration / 2).max(Duration::from_millis(1));
+                                tick_duration_tx.send(new_duration).ok();
+                            } else if (9..=11).contains(&mouse.column) {
+                                // [R]
+                                tick_duration_tx.send(initial_tick_duration).ok();
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+
+    // Shutdown
+    shutdown_notify.notify_waiters();
+    simulation_task.await?;
+    restore_terminal()?;
+
+    Ok(())
+}
+
+fn init_terminal() -> io::Result<Terminal<impl Backend>> {
+    enable_raw_mode()?;
+    stdout()
+        .execute(EnterAlternateScreen)?
+        .execute(event::EnableMouseCapture)?;
+    let backend = CrosstermBackend::new(stdout());
+    Terminal::new(backend)
+}
+
+fn restore_terminal() -> io::Result<()> {
+    disable_raw_mode()?;
+    stdout()
+        .execute(LeaveAlternateScreen)?
+        .execute(event::DisableMouseCapture)?;
+    Ok(())
+}

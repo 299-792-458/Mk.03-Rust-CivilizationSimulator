@@ -1,0 +1,135 @@
+//! Shared resources and world-level data structures.
+
+use std::time::Duration;
+
+use crate::simulation::Nation;
+use crate::simulation::{Era, Tech, WeaponTier};
+use bevy_ecs::prelude::Resource;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize)]
+pub struct NationMetrics {
+    pub economy: f32,   // 경제
+    pub science: f32,   // 과학
+    pub culture: f32,   // 문화
+    pub diplomacy: f32, // 외교
+    pub religion: f32,  // 종교
+    pub military: f32,
+    pub territory: f32,
+    pub is_destroyed: bool,
+    pub era: Era,
+    pub weapon_tier: WeaponTier,
+    pub unlocked_techs: Vec<Tech>,
+    pub research_stock: f32,
+    pub culture_stock: f32,
+    pub population: u64,
+}
+
+impl Default for NationMetrics {
+    fn default() -> Self {
+        Self {
+            economy: 50.0,
+            science: 20.0,
+            culture: 30.0,
+            diplomacy: 30.0,
+            religion: 25.0,
+            military: 20.0,
+            territory: 33.33,
+            is_destroyed: false,
+            era: Era::Dawn,
+            weapon_tier: WeaponTier::KnappedStone,
+            unlocked_techs: vec![Tech::Knapping],
+            research_stock: 0.0,
+            culture_stock: 0.0,
+            population: 3_000_000,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize)]
+pub struct NationCivState {
+    pub cities: u32,
+    pub happiness: f32,
+    pub stability: f32,
+    pub production: f32,
+}
+
+impl Default for NationCivState {
+    fn default() -> Self {
+        Self {
+            cities: 2,
+            happiness: 65.0,
+            stability: 60.0,
+            production: 40.0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize)]
+pub struct AllNationCivState(pub HashMap<Nation, NationCivState>);
+
+impl Default for AllNationCivState {
+    fn default() -> Self {
+        let mut map = HashMap::new();
+        map.insert(Nation::Tera, NationCivState::default());
+        map.insert(Nation::Sora, NationCivState::default());
+        map.insert(Nation::Aqua, NationCivState::default());
+        map.insert(Nation::Solar, NationCivState::default());
+        map.insert(Nation::Luna, NationCivState::default());
+        Self(map)
+    }
+}
+
+#[derive(Debug, Resource, Clone, serde::Serialize, serde::Deserialize)]
+pub struct AllNationMetrics(pub HashMap<Nation, NationMetrics>);
+
+impl Default for AllNationMetrics {
+    fn default() -> Self {
+        let mut metrics = HashMap::new();
+        metrics.insert(Nation::Tera, NationMetrics::default());
+        metrics.insert(Nation::Sora, NationMetrics::default());
+        metrics.insert(Nation::Aqua, NationMetrics::default());
+        metrics.insert(Nation::Solar, NationMetrics::default());
+        metrics.insert(Nation::Luna, NationMetrics::default());
+        Self(metrics)
+    }
+}
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct NuclearBlasts(pub HashMap<crate::simulation::AxialCoord, u8>);
+
+#[derive(Debug, Resource)]
+pub struct DeltaTime(pub f32);
+
+impl Default for DeltaTime {
+    fn default() -> Self {
+        Self(1.0)
+    }
+}
+
+#[derive(Debug, Clone, Resource)]
+pub struct SimulationConfig {
+    pub tick_duration: Duration,
+    pub grid_radius: i32,
+}
+
+impl Default for SimulationConfig {
+    fn default() -> Self {
+        Self {
+            tick_duration: Duration::from_secs(1),
+            grid_radius: 12,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize)]
+pub struct WorldTime {
+    pub tick: u64,
+}
+
+impl Default for WorldTime {
+    fn default() -> Self {
+        Self { tick: 0 }
+    }
+}
