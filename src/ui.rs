@@ -250,6 +250,22 @@ fn render_world_state_panel(
         .science_victory
         .leader_progress
         .min(snapshot.science_victory.goal);
+    let gap = snapshot
+        .science_victory
+        .history
+        .last()
+        .map(|v| {
+            let second = snapshot
+                .science_victory
+                .history
+                .iter()
+                .rev()
+                .nth(1)
+                .cloned()
+                .unwrap_or(*v);
+            (v - second).abs()
+        })
+        .unwrap_or(0.0);
 
     let info_lines = vec![
         Line::from(format!(
@@ -285,8 +301,8 @@ fn render_world_state_panel(
             ),
         ]),
         Line::from(format!(
-            "과학 승리: {} {:.1}% / 100%",
-            leader_name, leader_progress
+            "과학 승리: {} {:.1}% / 100% (격차 {:.1}p)",
+            leader_name, leader_progress, gap
         )),
     ];
     let info_paragraph = Paragraph::new(info_lines);
@@ -463,7 +479,7 @@ fn render_science_progress_panel(
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Moonshot Progress (%)"),
+                .title("Moonshot Progress (Leader)"),
         )
         .data(&data)
         .max(snapshot.science_victory.goal as u64)

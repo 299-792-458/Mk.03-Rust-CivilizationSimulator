@@ -23,11 +23,33 @@ pub fn science_victory_system(
 
         let progress_now = {
             let entry = tracker.progress.entry(*nation).or_insert(0.0);
-            let population_factor = (metrics.population as f32 / 5_000_000.0).clamp(0.4, 2.0);
-            let momentum = metrics.science * 0.04
+            let population_factor = (metrics.population as f32 / 5_000_000.0).clamp(0.35, 2.3);
+
+            // Tech gates: later eras unlock stronger science throughput
+            let era_bonus = match metrics.era {
+                crate::simulation::Era::Dawn => 0.8,
+                crate::simulation::Era::Ancient => 0.9,
+                crate::simulation::Era::Classical => 1.0,
+                crate::simulation::Era::Medieval => 1.05,
+                crate::simulation::Era::Industrial => 1.12,
+                crate::simulation::Era::Modern => 1.2,
+                crate::simulation::Era::Nuclear => 1.35,
+            };
+
+            // Collaboration: diplomacy + culture aid science momentum
+            let diplomacy_bonus = (metrics.diplomacy * 0.006 + metrics.culture * 0.004).min(4.0);
+
+            // War fatigue slows progress (modeled via military attrition and casualties elsewhere)
+            let conflict_drag = (100.0 - metrics.military).max(0.0) * 0.0009;
+
+            let momentum = (metrics.science * 0.042
                 + metrics.economy * 0.012
-                + metrics.culture * 0.006
-                + metrics.research_stock * 0.002;
+                + metrics.culture * 0.007
+                + metrics.research_stock * 0.0025
+                + diplomacy_bonus)
+                * era_bonus
+                * (1.0 - conflict_drag).max(0.6);
+
             let progress_gain = momentum * population_factor * 0.01;
             *entry = (*entry + progress_gain).min(goal);
             *entry

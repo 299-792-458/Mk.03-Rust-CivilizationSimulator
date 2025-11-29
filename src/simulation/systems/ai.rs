@@ -30,9 +30,9 @@ const GATHER_TRANSITIONS: &[(BehaviorState, f32)] = &[
 ];
 
 const TRADE_TRANSITIONS: &[(BehaviorState, f32)] = &[
-    (BehaviorState::Trade, 0.25),
-    (BehaviorState::Rest, 0.25),
-    (BehaviorState::Idle, 0.2),
+    (BehaviorState::Trade, 0.35),
+    (BehaviorState::Rest, 0.2),
+    (BehaviorState::Idle, 0.15),
     (BehaviorState::Explore, 0.3),
 ];
 
@@ -66,7 +66,7 @@ fn personality_modifier(personality: &Personality, state: BehaviorState) -> f32 
 
     modifier += match state {
         BehaviorState::Hunt => personality.aggressive * 0.6 - personality.cautious * 0.3,
-        BehaviorState::Trade => personality.social * 0.5,
+        BehaviorState::Trade => personality.social * 0.65 + personality.curious * 0.15,
         BehaviorState::Explore => personality.curious * 0.6 - personality.cautious * 0.2,
         BehaviorState::Gather => personality.curious * 0.2 + personality.cautious * 0.2,
         BehaviorState::Rest => personality.cautious * 0.4 - personality.aggressive * 0.2,
@@ -84,8 +84,8 @@ fn epoch_modifier(segment: &str, state: BehaviorState) -> f32 {
             _ => 1.0,
         },
         "한낮" => match state {
-            BehaviorState::Trade => 1.2,
-            BehaviorState::Idle => 0.85,
+            BehaviorState::Trade => 1.25,
+            BehaviorState::Idle => 0.75,
             _ => 1.0,
         },
         "해질녘" => match state {

@@ -23,6 +23,11 @@ fn apply_war_science_penalty(metrics: &mut crate::simulation::NationMetrics, cas
     let science_loss = metrics.science * casualty_ratio * 0.6 + casualty_ratio * 12.0;
     metrics.science = (metrics.science - science_loss).max(0.0);
     metrics.research_stock *= (1.0 - casualty_ratio * 0.65).clamp(0.0, 1.0);
+
+    // War undermines economic surplus and production base that feeds science.
+    let econ_loss = metrics.economy * casualty_ratio * 0.45 + casualty_ratio * 8.0;
+    metrics.economy = (metrics.economy - econ_loss).max(0.0);
+    metrics.culture = (metrics.culture - casualty_ratio * 6.0).max(0.0);
 }
 
 // System to clean up finished combat encounters
@@ -170,6 +175,10 @@ pub fn warfare_system(
             winner_metrics.military = winner_metrics.military.max(0.0);
             apply_war_science_penalty(winner_metrics, winner_casualties);
             winner_metrics.population = winner_metrics.population.saturating_sub(winner_casualties);
+            // Post-war rebuilding boosts diplomacy/culture for victors that avoid annihilation
+            winner_metrics.diplomacy =
+                (winner_metrics.diplomacy + (territory_change * 0.8)).min(100.0);
+            winner_metrics.culture = (winner_metrics.culture + 0.6).min(100.0);
         }
 
         if let Some(loser_metrics) = all_metrics.0.get_mut(&loser) {
