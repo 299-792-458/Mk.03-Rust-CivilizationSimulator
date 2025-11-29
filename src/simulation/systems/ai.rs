@@ -5,7 +5,8 @@ use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
 use crate::simulation::{
-    Behavior, BehaviorState, Identity, Personality, Position, WorldMetadata, WorldTime,
+    Behavior, BehaviorState, Identity, Personality, Position, ScienceVictory, WorldMetadata,
+    WorldTime,
 };
 
 const IDLE_TRANSITIONS: &[(BehaviorState, f32)] = &[
@@ -123,6 +124,7 @@ pub fn ai_state_transition_system(
     mut query: Query<(&Identity, &Position, &Personality, &mut Behavior)>,
     world_meta: Res<WorldMetadata>,
     time: Res<WorldTime>,
+    science: Res<ScienceVictory>,
 ) {
     let (segment, season) = world_meta.epoch_for_tick(time.tick);
 
@@ -138,6 +140,15 @@ pub fn ai_state_transition_system(
             weight *= world_meta.faction_behavior_modifier(identity.faction, *next_state);
             weight *= epoch_modifier(segment, *next_state);
             weight *= season_modifier(season, *next_state);
+            // Macro goal tilt: during science race, prefer trade/gather over hunt.
+            if !science.finished {
+                match next_state {
+                    BehaviorState::Trade => weight *= 1.25,
+                    BehaviorState::Gather => weight *= 1.1,
+                    BehaviorState::Hunt => weight *= 0.8,
+                    _ => {}
+                }
+            }
 
             // Ensure we never end up with non-positive weights.
             weight = weight.max(0.01);

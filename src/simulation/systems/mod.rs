@@ -13,6 +13,8 @@ pub mod victory;
 pub mod peace;
 pub mod warfare;
 pub mod warfatigue;
+pub mod demography;
+pub mod blocs;
 
 pub use ai::*;
 pub use civilization::*;
@@ -28,3 +30,5 @@ pub use victory::*;
 pub use peace::*;
 pub use warfare::*;
 pub use warfatigue::*;
+pub use demography::*;
+pub use blocs::*;

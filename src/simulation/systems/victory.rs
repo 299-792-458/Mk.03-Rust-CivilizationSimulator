@@ -1,13 +1,15 @@
 use bevy_ecs::prelude::*;
 
 use crate::simulation::{
-    AllNationMetrics, Nation, ScienceVictory, WorldEvent, WorldEventLog, WorldMetadata, WorldTime,
+    AllNationMetrics, Nation, ScienceVictory, WorldBlocs, WorldEvent, WorldEventLog, WorldMetadata,
+    WorldTime,
 };
 
 /// 누가 달 탐사(과학 승리)를 선도하는지 세대별 기록을 쌓는다. 1틱=1세대.
 pub fn science_victory_system(
     mut tracker: ResMut<ScienceVictory>,
     all_metrics: Res<AllNationMetrics>,
+    blocs: Res<WorldBlocs>,
     mut event_log: ResMut<WorldEventLog>,
     time: Res<WorldTime>,
     world_meta: Res<WorldMetadata>,
@@ -44,11 +46,37 @@ pub fn science_victory_system(
                 // War fatigue slows progress (modeled via military attrition and casualties elsewhere)
                 let conflict_drag = (100.0 - metrics.military).max(0.0) * 0.0009;
 
+                // Bloc bonus/penalty
+                let bloc_bonus = blocs
+                    .blocs
+                    .get(&crate::simulation::BlocKind::ResearchPact)
+                    .and_then(|bloc| {
+                        if bloc.members.contains(nation) {
+                            Some(bloc.strength * 0.3)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(0.0);
+                let embargo_drag = blocs
+                    .blocs
+                    .get(&crate::simulation::BlocKind::Sanction)
+                    .and_then(|bloc| {
+                        if bloc.members.contains(nation) {
+                            Some(bloc.strength * 0.2)
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or(0.0);
+
                 let momentum = (metrics.science * 0.042
                     + metrics.economy * 0.012
                     + metrics.culture * 0.007
                     + metrics.research_stock * 0.0025
-                    + diplomacy_bonus)
+                    + diplomacy_bonus
+                    + bloc_bonus
+                    - embargo_drag)
                     * era_bonus
                     * (1.0 - conflict_drag).max(0.6);
 

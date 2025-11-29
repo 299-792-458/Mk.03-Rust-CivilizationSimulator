@@ -14,6 +14,7 @@ pub mod resources;
 pub mod systems;
 pub mod technology;
 pub mod world;
+pub mod blocs;
 
 pub use components::*;
 pub use events::*;
@@ -25,6 +26,7 @@ pub use resources::*;
 pub use systems::*;
 pub use technology::*;
 pub use world::*;
+pub use blocs::*;
 
 pub struct SimulationWorld {
     world: World,
@@ -50,6 +52,7 @@ impl SimulationWorld {
         world.insert_resource(WarFatigue::default());
         world.insert_resource(WorldRichness::default());
         world.insert_resource(ClimateState::default());
+        world.insert_resource(WorldBlocs::default());
         world.insert_resource(WorldTime::default());
         world.insert_resource(WorldMetadata::default());
         world.insert_resource(WorldEventLog::default());
@@ -74,8 +77,10 @@ impl SimulationWorld {
                 peace_recovery_system,
                 richness_overlay_system,
                 climate_impact_system,
+                bloc_system,
                 war_fatigue_system,
                 territory_system,
+                demography_system,
                 event_generation_system,
                 logging_system,
             )

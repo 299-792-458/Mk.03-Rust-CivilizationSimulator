@@ -16,7 +16,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
         .split(frame.size());
 
     // Header
-    let header_lines = vec![
+    let mut header_lines = vec![
         Line::from(vec![
             Span::styled(" Mk.03 Rust Studio - TERA ", Style::default().bold()),
             Span::raw(" | "),
@@ -44,6 +44,18 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
             ),
         ]),
     ];
+    if snapshot.science_victory.finished {
+        header_lines.push(Line::from(Span::styled(
+            "우주 문명 달성 — 시뮬레이션 안정화",
+            Style::default().fg(Color::LightGreen).bold(),
+        )));
+    } else if snapshot.science_victory.interstellar_mode {
+        header_lines.push(Line::from(Span::styled(
+            "성간 확장 단계 진행 중",
+            Style::default().fg(Color::Cyan).bold(),
+        )));
+    }
+
     let header_paragraph = Paragraph::new(header_lines).block(Block::new().borders(Borders::TOP));
     frame.render_widget(header_paragraph, main_layout[0]);
 
@@ -334,8 +346,12 @@ fn render_world_state_panel(
             ),
         ]),
         Line::from(format!(
-            "과학 승리: {} {:.1}% / 100% (격차 {:.1}p)",
-            leader_name, leader_progress, gap
+            "과학 승리: {} {:.1}% / 100% (격차 {:.1}p) | 성간 {:.1}% / {:.0}%",
+            leader_name,
+            leader_progress,
+            gap,
+            snapshot.science_victory.interstellar_progress,
+            snapshot.science_victory.interstellar_goal
         )),
     ];
     let info_paragraph = Paragraph::new(info_lines);
@@ -549,7 +565,11 @@ impl<'a> Widget for MapWidget<'a> {
             let screen_x = center_x as i32 + coord.q * 2 + coord.r;
             let screen_y = center_y as i32 + coord.r;
 
-            let hex_char = "█";
+            let hex_char = if Some(hex.owner) == self.snapshot.science_victory.leader {
+                "◆"
+            } else {
+                "█"
+            };
 
             let mut color = if tick % 5 == 0 {
                 season_tint
@@ -592,6 +612,22 @@ impl<'a> Widget for MapWidget<'a> {
                         (screen_y + 1) as u16,
                         glow_char,
                         Style::default().fg(season_tint),
+                    );
+                }
+            }
+
+            // Climate risk shimmer
+            if self.snapshot.science_victory.climate_risk > 60.0 && tick % 3 == 0 {
+                if screen_x >= area.x as i32
+                    && screen_x + hex_width <= (area.x + area.width) as i32
+                    && screen_y >= area.y as i32
+                    && screen_y + hex_height <= (area.y + area.height) as i32
+                {
+                    buf.set_string(
+                        screen_x as u16,
+                        screen_y as u16,
+                        "∙",
+                        Style::default().fg(Color::Red),
                     );
                 }
             }

@@ -5,8 +5,8 @@ use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
 use crate::simulation::{
-    AllNationMetrics, Behavior, BehaviorState, Identity, Inventory, Position, WorldMetadata,
-    WorldTime,
+    AllNationMetrics, Behavior, BehaviorState, BlocKind, WorldBlocs, Identity, Inventory, Position,
+    WorldMetadata, WorldTime,
 };
 
 fn season_trade_modifier(season: &str) -> f32 {
@@ -42,13 +42,14 @@ fn upkeep_penalty(base: f32, upkeep: f32) -> f32 {
 pub fn economy_system(
     mut query: Query<(&Identity, &Position, &Behavior, &mut Inventory)>,
     mut all_metrics: ResMut<AllNationMetrics>,
+    blocs: Res<WorldBlocs>,
     world_meta: Res<WorldMetadata>,
     time: Res<WorldTime>,
 ) {
     let (segment, season) = world_meta.epoch_for_tick(time.tick);
 
     // First, handle nation-level economic updates (upkeep, investment, growth, decay)
-    for metrics in all_metrics.0.values_mut() {
+    for (nation_key, metrics) in all_metrics.0.iter_mut() {
         // 1. Military Upkeep
         let military_upkeep = metrics.military * 0.05;
         metrics.economy -= military_upkeep;
@@ -87,6 +88,20 @@ pub fn economy_system(
         metrics.culture *= 0.998;
         metrics.diplomacy *= 0.999;
         metrics.religion *= 0.9995;
+
+        // Bloc influences
+        if let Some(research) = blocs.blocs.get(&BlocKind::ResearchPact) {
+            if research.members.contains(nation_key) {
+                metrics.science += research.strength * 0.3;
+                metrics.diplomacy += research.strength * 0.15;
+            }
+        }
+        if let Some(sanction) = blocs.blocs.get(&BlocKind::Sanction) {
+            if sanction.members.contains(nation_key) {
+                metrics.economy -= sanction.strength * 0.6;
+                metrics.science -= sanction.strength * 0.25;
+            }
+        }
     }
 
     // Second, handle individual NPC actions contributing to economy
