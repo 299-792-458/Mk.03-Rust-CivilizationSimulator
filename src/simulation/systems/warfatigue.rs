@@ -14,6 +14,9 @@ pub fn war_fatigue_system(
 ) {
     let decay = 0.98_f32;
     fatigue.intensity *= decay;
+    if fatigue.intensity < 1.0 {
+        fatigue.intensity = 0.0;
+    }
 
     for value in blasts.0.values_mut() {
         if *value > 0 {

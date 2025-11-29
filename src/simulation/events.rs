@@ -43,6 +43,10 @@ pub enum WorldEventKind {
         nation: Nation,
         progress: f32,
     },
+    ScienceVictory {
+        winner: Nation,
+        progress: f32,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -83,6 +87,7 @@ impl WorldEvent {
             WorldEventKind::Warfare { .. } => "전쟁",
             WorldEventKind::EraShift { .. } => "시대",
             WorldEventKind::ScienceProgress { .. } => "과학",
+            WorldEventKind::ScienceVictory { .. } => "과학",
         }
     }
 
@@ -94,6 +99,7 @@ impl WorldEvent {
             WorldEventKind::Warfare { .. } => Sentiment::Negative,
             WorldEventKind::EraShift { .. } => Sentiment::Positive,
             WorldEventKind::ScienceProgress { .. } => Sentiment::Positive,
+            WorldEventKind::ScienceVictory { .. } => Sentiment::Positive,
         }
     }
 
@@ -158,6 +164,10 @@ impl WorldEvent {
                 "{}의 달 탐사 진행 {:.1}% / 100% (1틱=1세대)",
                 nation.name(),
                 progress.min(100.0)
+            ),
+            WorldEventKind::ScienceVictory { winner, .. } => format!(
+                "{}가 인류 최초 달 착륙을 달성했습니다! 전 인류의 과학 승리",
+                winner.name()
             ),
         }
     }
@@ -280,6 +290,21 @@ impl WorldEvent {
             epoch: epoch.to_string(),
             season: season.to_string(),
             kind: WorldEventKind::ScienceProgress { nation, progress },
+        }
+    }
+
+    pub fn science_victory(
+        tick: u64,
+        epoch: &str,
+        season: &str,
+        winner: Nation,
+        progress: f32,
+    ) -> Self {
+        Self {
+            tick,
+            epoch: epoch.to_string(),
+            season: season.to_string(),
+            kind: WorldEventKind::ScienceVictory { winner, progress },
         }
     }
 }

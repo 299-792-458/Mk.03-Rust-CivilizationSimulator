@@ -201,6 +201,22 @@ fn format_event_line(event: &WorldEvent) -> String {
                 format!("{} {}", nation_badge, progress_badge)
             )
         }
+        crate::simulation::WorldEventKind::ScienceVictory { winner, progress } => {
+            let winner_badge = badge(winner.name(), winner.logging_color());
+            let progress_badge = badge(
+                &format!("{:.1}% / 100%", progress.min(100.0)),
+                Color::BrightGreen,
+            );
+            format!(
+                "{} {} {} {} {} {} 인류 달 착륙 달성!",
+                category_badge,
+                sentiment_badge,
+                tick_badge,
+                epoch_badge,
+                season_badge,
+                format!("{} {}", winner_badge, progress_badge)
+            )
+        }
     }
 }
 

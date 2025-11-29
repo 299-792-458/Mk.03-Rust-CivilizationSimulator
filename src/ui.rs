@@ -117,6 +117,13 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
                         Style::default().fg(Color::LightCyan),
                     )
                 }
+                WorldEventKind::ScienceVictory { winner, .. } => {
+                    let color = winner.color();
+                    (
+                        Cell::from(winner.name()).style(Style::default().fg(color)),
+                        Style::default().fg(Color::Green),
+                    )
+                }
             };
 
             let (actor, details, impact) = match &event.kind {
@@ -182,6 +189,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
                     nation.name().to_string(),
                     "달 탐사 단계".to_string(),
                     format!("{progress:.1}% 달성"),
+                ),
+                WorldEventKind::ScienceVictory { winner, progress } => (
+                    winner.name().to_string(),
+                    "과학 승리".to_string(),
+                    format!("{progress:.1}% 완주"),
                 ),
             };
 
@@ -250,22 +262,9 @@ fn render_world_state_panel(
         .science_victory
         .leader_progress
         .min(snapshot.science_victory.goal);
-    let gap = snapshot
-        .science_victory
-        .history
-        .last()
-        .map(|v| {
-            let second = snapshot
-                .science_victory
-                .history
-                .iter()
-                .rev()
-                .nth(1)
-                .cloned()
-                .unwrap_or(*v);
-            (v - second).abs()
-        })
-        .unwrap_or(0.0);
+    let gap = (snapshot.science_victory.leader_progress
+        - snapshot.science_victory.runner_up_progress)
+        .abs();
 
     let info_lines = vec![
         Line::from(format!(
@@ -483,7 +482,11 @@ fn render_science_progress_panel(
         )
         .data(&data)
         .max(snapshot.science_victory.goal as u64)
-        .style(Style::default().fg(Color::Cyan));
+        .style(Style::default().fg(if snapshot.science_victory.finished {
+            Color::LightGreen
+        } else {
+            Color::Cyan
+        }));
     frame.render_widget(sparkline, layout[1]);
 }
 

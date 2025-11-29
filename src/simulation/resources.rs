@@ -117,6 +117,8 @@ pub struct ScienceVictory {
     pub goal: f32,
     pub leader_history: Vec<f32>,
     pub milestones: HashMap<Nation, u8>,
+    pub finished: bool,
+    pub winner: Option<Nation>,
 }
 
 impl Default for ScienceVictory {
@@ -136,6 +138,8 @@ impl Default for ScienceVictory {
             goal: 100.0,
             leader_history: Vec::new(),
             milestones: HashMap::new(),
+            finished: false,
+            winner: None,
         }
     }
 }

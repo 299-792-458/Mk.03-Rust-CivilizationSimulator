@@ -69,6 +69,7 @@ impl SimulationWorld {
                 warfare_system, // Handles starting new combat
                 science_victory_system,
                 nuclear_decay_system,
+                peace_recovery_system,
                 richness_overlay_system,
                 war_fatigue_system,
                 territory_system,
@@ -105,17 +106,22 @@ impl SimulationWorld {
         let richness = self.world.resource::<WorldRichness>().richness;
         let science_victory_snapshot = {
             let tracker = self.world.resource::<ScienceVictory>();
-            let leader = tracker
-                .progress
-                .iter()
-                .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
-                .map(|(nation, progress)| (*nation, *progress));
+            let mut ordered: Vec<_> = tracker.progress.iter().collect();
+            ordered.sort_by(|a, b| {
+                b.1.partial_cmp(a.1)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            });
+            let leader = ordered.get(0).map(|(nation, progress)| (**nation, **progress));
+            let runner_up = ordered.get(1).map(|(_, progress)| **progress);
 
             observer::ScienceVictorySnapshot {
                 leader: leader.map(|(nation, _)| nation),
                 leader_progress: leader.map(|(_, progress)| progress).unwrap_or(0.0),
+                runner_up_progress: runner_up.unwrap_or(0.0),
                 history: tracker.leader_history.clone(),
                 goal: tracker.goal,
+                finished: tracker.finished,
+                winner: tracker.winner,
             }
         };
 

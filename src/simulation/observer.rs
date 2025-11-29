@@ -53,8 +53,11 @@ pub struct WorldOverlaySnapshot {
 pub struct ScienceVictorySnapshot {
     pub leader: Option<Nation>,
     pub leader_progress: f32,
+    pub runner_up_progress: f32,
     pub history: Vec<f32>,
     pub goal: f32,
+    pub finished: bool,
+    pub winner: Option<Nation>,
 }
 
 #[derive(Debug, Clone, Serialize)]

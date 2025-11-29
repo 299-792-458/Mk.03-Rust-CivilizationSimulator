@@ -12,6 +12,10 @@ pub fn science_victory_system(
     time: Res<WorldTime>,
     world_meta: Res<WorldMetadata>,
 ) {
+    if tracker.finished {
+        return;
+    }
+
     let (epoch, season) = world_meta.epoch_for_tick(time.tick);
     let mut leader: Option<(Nation, f32)> = None;
     let goal = tracker.goal;
@@ -80,10 +84,22 @@ pub fn science_victory_system(
         }
     }
 
-    if let Some((_, value)) = leader {
+    if let Some((nation, value)) = leader {
         tracker.leader_history.push(value.min(goal));
         if tracker.leader_history.len() > 256 {
             tracker.leader_history.remove(0);
+        }
+
+        if value >= goal && !tracker.finished {
+            tracker.finished = true;
+            tracker.winner = Some(nation);
+            event_log.push(WorldEvent::science_victory(
+                time.tick,
+                epoch,
+                season,
+                nation,
+                value,
+            ));
         }
     }
 }

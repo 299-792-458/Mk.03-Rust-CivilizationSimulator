@@ -49,8 +49,12 @@ pub fn warfare_system(
     time: Res<WorldTime>,
     mut event_log: ResMut<crate::simulation::WorldEventLog>,
     world_meta: Res<crate::simulation::WorldMetadata>,
+    science_victory: Res<crate::simulation::ScienceVictory>,
     hex_query: Query<(Entity, &Hex, &AxialCoord)>,
 ) {
+    if science_victory.finished {
+        return;
+    }
     let mut rng = SmallRng::seed_from_u64(time.tick.wrapping_mul(257));
     let mut battle_requests = Vec::new();
 
