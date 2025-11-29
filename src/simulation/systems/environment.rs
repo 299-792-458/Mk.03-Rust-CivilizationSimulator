@@ -1,6 +1,8 @@
 use bevy_ecs::prelude::*;
 
-use crate::simulation::{AllNationCivState, AllNationMetrics, WorldMetadata, WorldTime};
+use crate::simulation::{
+    AllNationCivState, AllNationMetrics, ClimateState, WorldMetadata, WorldTime, WorldRichness,
+};
 
 /// Applies soft seasonal pulses to civ happiness/production and nation surface stats.
 pub fn environment_system(
@@ -31,4 +33,40 @@ pub fn environment_system(
 
 fn clamp(value: f32, min: f32, max: f32) -> f32 {
     value.max(min).min(max)
+}
+
+/// Simple richness overlay aggregator.
+pub fn richness_overlay_system(mut richness: ResMut<WorldRichness>, all_metrics: Res<AllNationMetrics>) {
+    let mut total = 0.0;
+    let mut count = 0.0;
+    for (_nation, metrics) in all_metrics.0.iter() {
+        if !metrics.is_destroyed {
+            total += metrics.economy * 0.5 + metrics.science * 0.5;
+            count += 1.0;
+        }
+    }
+    richness.richness = if count > 0.0 { (total / count) / 100.0 } else { 0.0 };
+}
+
+/// Applies climate penalties/bonuses to nation metrics based on global climate state.
+pub fn climate_impact_system(
+    climate: Res<ClimateState>,
+    mut metrics: ResMut<AllNationMetrics>,
+) {
+    let risk = climate.climate_risk;
+    let biodiversity = climate.biodiversity;
+    for (_, m) in metrics.0.iter_mut() {
+        if m.is_destroyed {
+            continue;
+        }
+        // Productivity penalty from risk
+        let penalty = (risk * 0.08).min(25.0);
+        m.economy = (m.economy - penalty).max(0.0);
+        // Science penalty but innovation spur if biodiversity is still healthy
+        let science_penalty = penalty * 0.4;
+        m.science = (m.science - science_penalty).max(0.0);
+        if biodiversity > 30.0 {
+            m.research_stock += biodiversity * 0.02;
+        }
+    }
 }

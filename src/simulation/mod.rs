@@ -49,6 +49,7 @@ impl SimulationWorld {
         world.insert_resource(NuclearBlasts::default());
         world.insert_resource(WarFatigue::default());
         world.insert_resource(WorldRichness::default());
+        world.insert_resource(ClimateState::default());
         world.insert_resource(WorldTime::default());
         world.insert_resource(WorldMetadata::default());
         world.insert_resource(WorldEventLog::default());
@@ -68,9 +69,11 @@ impl SimulationWorld {
                 technology_system,
                 warfare_system, // Handles starting new combat
                 science_victory_system,
+                climate_system,
                 nuclear_decay_system,
                 peace_recovery_system,
                 richness_overlay_system,
+                climate_impact_system,
                 war_fatigue_system,
                 territory_system,
                 event_generation_system,
@@ -104,6 +107,7 @@ impl SimulationWorld {
         let nuclear = self.world.resource::<NuclearBlasts>().0.clone();
         let war_fatigue = self.world.resource::<WarFatigue>().intensity;
         let richness = self.world.resource::<WorldRichness>().richness;
+        let climate = self.world.resource::<ClimateState>().clone();
         let science_victory_snapshot = {
             let tracker = self.world.resource::<ScienceVictory>();
             let mut ordered: Vec<_> = tracker.progress.iter().collect();
@@ -122,6 +126,12 @@ impl SimulationWorld {
                 goal: tracker.goal,
                 finished: tracker.finished,
                 winner: tracker.winner,
+                interstellar_mode: tracker.interstellar_mode,
+                interstellar_progress: tracker.interstellar_progress,
+                interstellar_goal: tracker.interstellar_goal,
+                carbon_ppm: climate.carbon_ppm,
+                climate_risk: climate.climate_risk,
+                biodiversity: climate.biodiversity,
             }
         };
 

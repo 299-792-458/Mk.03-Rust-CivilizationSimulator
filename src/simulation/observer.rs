@@ -58,6 +58,12 @@ pub struct ScienceVictorySnapshot {
     pub goal: f32,
     pub finished: bool,
     pub winner: Option<Nation>,
+    pub interstellar_mode: bool,
+    pub interstellar_progress: f32,
+    pub interstellar_goal: f32,
+    pub carbon_ppm: f32,
+    pub climate_risk: f32,
+    pub biodiversity: f32,
 }
 
 #[derive(Debug, Clone, Serialize)]

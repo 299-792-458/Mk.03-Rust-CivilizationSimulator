@@ -24,6 +24,11 @@ pub struct NationMetrics {
     pub research_stock: f32,
     pub culture_stock: f32,
     pub population: u64,
+    pub youth: u64,
+    pub adult: u64,
+    pub elder: u64,
+    pub productivity: f32,
+    pub unemployment: f32,
 }
 
 impl Default for NationMetrics {
@@ -43,6 +48,11 @@ impl Default for NationMetrics {
             research_stock: 0.0,
             culture_stock: 0.0,
             population: 3_000_000,
+            youth: 900_000,
+            adult: 1_800_000,
+            elder: 300_000,
+            productivity: 1.0,
+            unemployment: 6.0,
         }
     }
 }
@@ -110,6 +120,14 @@ pub struct WorldRichness {
     pub richness: f32,
 }
 
+/// 전지구 생태/기후 상태
+#[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct ClimateState {
+    pub carbon_ppm: f32,
+    pub climate_risk: f32,
+    pub biodiversity: f32,
+}
+
 /// 과학 승리(달 탐사) 진행도 추적.
 #[derive(Debug, Clone, Resource, Serialize, Deserialize)]
 pub struct ScienceVictory {
@@ -119,6 +137,9 @@ pub struct ScienceVictory {
     pub milestones: HashMap<Nation, u8>,
     pub finished: bool,
     pub winner: Option<Nation>,
+    pub interstellar_mode: bool,
+    pub interstellar_progress: f32,
+    pub interstellar_goal: f32,
 }
 
 impl Default for ScienceVictory {
@@ -140,6 +161,9 @@ impl Default for ScienceVictory {
             milestones: HashMap::new(),
             finished: false,
             winner: None,
+            interstellar_mode: false,
+            interstellar_progress: 0.0,
+            interstellar_goal: 100.0,
         }
     }
 }

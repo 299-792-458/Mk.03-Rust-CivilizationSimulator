@@ -1,5 +1,6 @@
 pub mod ai;
 pub mod civilization;
+pub mod climate;
 pub mod economy;
 pub mod environment;
 pub mod events;
@@ -15,12 +16,12 @@ pub mod warfatigue;
 
 pub use ai::*;
 pub use civilization::*;
+pub use climate::*;
 pub use economy::*;
 pub use environment::*;
 pub use events::*;
 pub use logging::*;
 pub use nuclear::*;
-pub use richness::*;
 pub use technology::*;
 pub use territory::*;
 pub use victory::*;

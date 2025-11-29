@@ -47,6 +47,14 @@ pub enum WorldEventKind {
         winner: Nation,
         progress: f32,
     },
+    InterstellarProgress {
+        leader: Nation,
+        progress: f32,
+    },
+    InterstellarVictory {
+        winner: Nation,
+        progress: f32,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -88,6 +96,8 @@ impl WorldEvent {
             WorldEventKind::EraShift { .. } => "시대",
             WorldEventKind::ScienceProgress { .. } => "과학",
             WorldEventKind::ScienceVictory { .. } => "과학",
+            WorldEventKind::InterstellarProgress { .. } => "우주",
+            WorldEventKind::InterstellarVictory { .. } => "우주",
         }
     }
 
@@ -100,6 +110,8 @@ impl WorldEvent {
             WorldEventKind::EraShift { .. } => Sentiment::Positive,
             WorldEventKind::ScienceProgress { .. } => Sentiment::Positive,
             WorldEventKind::ScienceVictory { .. } => Sentiment::Positive,
+            WorldEventKind::InterstellarProgress { .. } => Sentiment::Positive,
+            WorldEventKind::InterstellarVictory { .. } => Sentiment::Positive,
         }
     }
 
@@ -167,6 +179,15 @@ impl WorldEvent {
             ),
             WorldEventKind::ScienceVictory { winner, .. } => format!(
                 "{}가 인류 최초 달 착륙을 달성했습니다! 전 인류의 과학 승리",
+                winner.name()
+            ),
+            WorldEventKind::InterstellarProgress { leader, progress } => format!(
+                "{}의 성간 이주 진행 {:.1}% / 100%",
+                leader.name(),
+                progress.min(100.0)
+            ),
+            WorldEventKind::InterstellarVictory { winner, .. } => format!(
+                "{}가 성간 정착을 완성했습니다! 우주 문명으로 진화",
                 winner.name()
             ),
         }
@@ -305,6 +326,36 @@ impl WorldEvent {
             epoch: epoch.to_string(),
             season: season.to_string(),
             kind: WorldEventKind::ScienceVictory { winner, progress },
+        }
+    }
+
+    pub fn interstellar_progress(
+        tick: u64,
+        epoch: &str,
+        season: &str,
+        leader: Nation,
+        progress: f32,
+    ) -> Self {
+        Self {
+            tick,
+            epoch: epoch.to_string(),
+            season: season.to_string(),
+            kind: WorldEventKind::InterstellarProgress { leader, progress },
+        }
+    }
+
+    pub fn interstellar_victory(
+        tick: u64,
+        epoch: &str,
+        season: &str,
+        winner: Nation,
+        progress: f32,
+    ) -> Self {
+        Self {
+            tick,
+            epoch: epoch.to_string(),
+            season: season.to_string(),
+            kind: WorldEventKind::InterstellarVictory { winner, progress },
         }
     }
 }

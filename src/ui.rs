@@ -124,6 +124,20 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
                         Style::default().fg(Color::Green),
                     )
                 }
+                WorldEventKind::InterstellarProgress { leader, .. } => {
+                    let color = leader.color();
+                    (
+                        Cell::from(leader.name()).style(Style::default().fg(color)),
+                        Style::default().fg(Color::Cyan),
+                    )
+                }
+                WorldEventKind::InterstellarVictory { winner, .. } => {
+                    let color = winner.color();
+                    (
+                        Cell::from(winner.name()).style(Style::default().fg(color)),
+                        Style::default().fg(Color::LightGreen),
+                    )
+                }
             };
 
             let (actor, details, impact) = match &event.kind {
@@ -193,6 +207,16 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
                 WorldEventKind::ScienceVictory { winner, progress } => (
                     winner.name().to_string(),
                     "과학 승리".to_string(),
+                    format!("{progress:.1}% 완주"),
+                ),
+                WorldEventKind::InterstellarProgress { leader, progress } => (
+                    leader.name().to_string(),
+                    "성간 이주 단계".to_string(),
+                    format!("{progress:.1}% 달성"),
+                ),
+                WorldEventKind::InterstellarVictory { winner, progress } => (
+                    winner.name().to_string(),
+                    "우주 문명 승리".to_string(),
                     format!("{progress:.1}% 완주"),
                 ),
             };
@@ -297,6 +321,16 @@ fn render_world_state_panel(
             Span::styled(
                 format!("Richness {:>4.0}%", snapshot.overlay.resource_richness * 100.0),
                 Style::default().fg(Color::Green),
+            ),
+            Span::raw("| "),
+            Span::styled(
+                format!(
+                    "Climate {:.0}ppm / Risk {:.1}% / Bio {:.1}",
+                    snapshot.science_victory.carbon_ppm,
+                    snapshot.science_victory.climate_risk,
+                    snapshot.science_victory.biodiversity
+                ),
+                Style::default().fg(Color::LightBlue),
             ),
         ]),
         Line::from(format!(

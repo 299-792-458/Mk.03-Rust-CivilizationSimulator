@@ -8,7 +8,8 @@ pub fn peace_recovery_system(
     warfatigue: Res<WarFatigue>,
     science_victory: Res<ScienceVictory>,
 ) {
-    if science_victory.finished {
+    // If interstellar victory done, freeze.
+    if !science_victory.interstellar_mode && science_victory.finished {
         return;
     }
 
