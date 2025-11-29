@@ -8,6 +8,7 @@ pub mod nuclear;
 pub mod richness;
 pub mod technology;
 pub mod territory;
+pub mod victory;
 pub mod warfare;
 pub mod warfatigue;
 
@@ -21,5 +22,6 @@ pub use nuclear::*;
 pub use richness::*;
 pub use technology::*;
 pub use territory::*;
+pub use victory::*;
 pub use warfare::*;
 pub use warfatigue::*;

@@ -4,7 +4,7 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Sparkline, Table},
 };
 use std::time::Duration;
 
@@ -110,6 +110,13 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
                         Style::default().fg(Color::Cyan),
                     )
                 }
+                WorldEventKind::ScienceProgress { nation, .. } => {
+                    let color = nation.color();
+                    (
+                        Cell::from(nation.name()).style(Style::default().fg(color)),
+                        Style::default().fg(Color::LightCyan),
+                    )
+                }
             };
 
             let (actor, details, impact) = match &event.kind {
@@ -171,6 +178,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
                     era.label().to_string(),
                     weapon.label().to_string(),
                 ),
+                WorldEventKind::ScienceProgress { nation, progress } => (
+                    nation.name().to_string(),
+                    "달 탐사 단계".to_string(),
+                    format!("{progress:.1}% 달성"),
+                ),
             };
 
             let cells = vec![
@@ -220,7 +232,8 @@ fn render_world_state_panel(
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
-            Constraint::Length(2),
+            Constraint::Length(3),
+            Constraint::Length(7),
             Constraint::Min(0),
             Constraint::Length(3),
         ])
@@ -228,9 +241,21 @@ fn render_world_state_panel(
 
     let total_entities = snapshot.entities.len();
     let tick = snapshot.tick;
+    let leader_name = snapshot
+        .science_victory
+        .leader
+        .map(|n| n.name().to_string())
+        .unwrap_or_else(|| "미정".to_string());
+    let leader_progress = snapshot
+        .science_victory
+        .leader_progress
+        .min(snapshot.science_victory.goal);
 
     let info_lines = vec![
-        Line::from(format!("Tick: {} | Entities: {}", tick, total_entities)),
+        Line::from(format!(
+            "세대(Tick): {} | Entities: {} | 목표: 달 탐사 100%",
+            tick, total_entities
+        )),
         Line::from(format!(
             "Epoch: {} | Season: {}",
             snapshot.epoch, snapshot.season
@@ -259,9 +284,15 @@ fn render_world_state_panel(
                 Style::default().fg(Color::Green),
             ),
         ]),
+        Line::from(format!(
+            "과학 승리: {} {:.1}% / 100%",
+            leader_name, leader_progress
+        )),
     ];
     let info_paragraph = Paragraph::new(info_lines);
     frame.render_widget(info_paragraph, panel_layout[0]);
+
+    render_science_progress_panel(frame, panel_layout[1], snapshot);
 
     let mut nations: Vec<_> = snapshot.all_metrics.0.keys().copied().collect();
     nations.sort_by_key(|a| a.name());
@@ -273,7 +304,7 @@ fn render_world_state_panel(
     let nations_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(constraints)
-        .split(panel_layout[1]);
+        .split(panel_layout[2]);
 
     for (i, &nation) in nations.iter().enumerate() {
         if i >= nations_layout.len() {
@@ -387,7 +418,57 @@ fn render_world_state_panel(
         Span::from("]"),
     ]));
     let speed_paragraph = Paragraph::new(speed_lines);
-    frame.render_widget(speed_paragraph, panel_layout[2]);
+    frame.render_widget(speed_paragraph, panel_layout[3]);
+}
+
+fn render_science_progress_panel(
+    frame: &mut Frame,
+    area: Rect,
+    snapshot: &ObserverSnapshot,
+) {
+    let layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2), Constraint::Min(0)])
+        .split(area);
+
+    let leader_name = snapshot
+        .science_victory
+        .leader
+        .map(|n| n.name().to_string())
+        .unwrap_or_else(|| "미정".to_string());
+    let leader_progress = snapshot
+        .science_victory
+        .leader_progress
+        .min(snapshot.science_victory.goal);
+
+    let text = Paragraph::new(vec![
+        Line::from("달 탐사 진행도 (1틱 = 1세대)"),
+        Line::from(format!(
+            "주도국: {} | {:.1}% / {:.0}%",
+            leader_name, leader_progress, snapshot.science_victory.goal
+        )),
+    ]);
+    frame.render_widget(text, layout[0]);
+
+    let mut data: Vec<u64> = snapshot
+        .science_victory
+        .history
+        .iter()
+        .map(|v| v.min(snapshot.science_victory.goal).round() as u64)
+        .collect();
+    if data.is_empty() {
+        data.push(0);
+    }
+    let sparkline = Sparkline::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Moonshot Progress (%)"),
+        )
+        .data(&data)
+        .max(snapshot.science_victory.goal as u64)
+        .style(Style::default().fg(Color::Cyan));
+    frame.render_widget(sparkline, layout[1]);
 }
 
 struct MapWidget<'a> {

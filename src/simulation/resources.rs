@@ -110,6 +110,36 @@ pub struct WorldRichness {
     pub richness: f32,
 }
 
+/// 과학 승리(달 탐사) 진행도 추적.
+#[derive(Debug, Clone, Resource, Serialize, Deserialize)]
+pub struct ScienceVictory {
+    pub progress: HashMap<Nation, f32>,
+    pub goal: f32,
+    pub leader_history: Vec<f32>,
+    pub milestones: HashMap<Nation, u8>,
+}
+
+impl Default for ScienceVictory {
+    fn default() -> Self {
+        let mut progress = HashMap::new();
+        for nation in [
+            Nation::Tera,
+            Nation::Sora,
+            Nation::Aqua,
+            Nation::Solar,
+            Nation::Luna,
+        ] {
+            progress.insert(nation, 0.0);
+        }
+        Self {
+            progress,
+            goal: 100.0,
+            leader_history: Vec::new(),
+            milestones: HashMap::new(),
+        }
+    }
+}
+
 #[derive(Debug, Resource)]
 pub struct DeltaTime(pub f32);
 

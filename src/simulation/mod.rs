@@ -52,6 +52,7 @@ impl SimulationWorld {
         world.insert_resource(WorldTime::default());
         world.insert_resource(WorldMetadata::default());
         world.insert_resource(WorldEventLog::default());
+        world.insert_resource(ScienceVictory::default());
 
         seed_entities(&mut world);
         seed_grid(&mut world);
@@ -66,6 +67,7 @@ impl SimulationWorld {
                 civilization_system,
                 technology_system,
                 warfare_system, // Handles starting new combat
+                science_victory_system,
                 nuclear_decay_system,
                 richness_overlay_system,
                 war_fatigue_system,
@@ -101,6 +103,21 @@ impl SimulationWorld {
         let nuclear = self.world.resource::<NuclearBlasts>().0.clone();
         let war_fatigue = self.world.resource::<WarFatigue>().intensity;
         let richness = self.world.resource::<WorldRichness>().richness;
+        let science_victory_snapshot = {
+            let tracker = self.world.resource::<ScienceVictory>();
+            let leader = tracker
+                .progress
+                .iter()
+                .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))
+                .map(|(nation, progress)| (*nation, *progress));
+
+            observer::ScienceVictorySnapshot {
+                leader: leader.map(|(nation, _)| nation),
+                leader_progress: leader.map(|(_, progress)| progress).unwrap_or(0.0),
+                history: tracker.leader_history.clone(),
+                goal: tracker.goal,
+            }
+        };
 
         // We need to construct a new HexGrid snapshot because the resource now holds entities.
         let grid_snapshot = {
@@ -176,6 +193,7 @@ impl SimulationWorld {
                     fallout: nuclear.values().map(|v| *v as f32).sum::<f32>(),
                     resource_richness: richness,
                 },
+                science_victory_snapshot,
                 entities,
                 events,
                 combat_hexes,

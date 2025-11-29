@@ -49,6 +49,14 @@ pub struct WorldOverlaySnapshot {
     pub resource_richness: f32,
 }
 
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct ScienceVictorySnapshot {
+    pub leader: Option<Nation>,
+    pub leader_progress: f32,
+    pub history: Vec<f32>,
+    pub goal: f32,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct ObserverSnapshot {
     pub tick: u64,
@@ -59,6 +67,7 @@ pub struct ObserverSnapshot {
     pub civ_state: AllNationCivState,
     pub grid: HexGridSnapshot,
     pub overlay: WorldOverlaySnapshot,
+    pub science_victory: ScienceVictorySnapshot,
     pub entities: Vec<EntitySnapshot>,
     pub events: Vec<WorldEvent>,
     pub combat_hexes: HashSet<AxialCoord>,
@@ -82,6 +91,7 @@ impl ObserverSnapshot {
             civ_state: AllNationCivState::default(),
             grid: HexGridSnapshot::default(),
             overlay: WorldOverlaySnapshot::default(),
+            science_victory: ScienceVictorySnapshot::default(),
             entities: Vec::new(),
             events: Vec::new(),
             combat_hexes: HashSet::new(),
@@ -99,6 +109,7 @@ impl ObserverSnapshot {
         civ_state: AllNationCivState,
         grid: HexGridSnapshot,
         overlay: WorldOverlaySnapshot,
+        science_victory: ScienceVictorySnapshot,
         entities: Vec<EntitySnapshot>,
         events: Vec<WorldEvent>,
         combat_hexes: HashSet<AxialCoord>,
@@ -112,6 +123,7 @@ impl ObserverSnapshot {
         self.civ_state = civ_state;
         self.grid = grid;
         self.overlay = overlay;
+        self.science_victory = science_victory;
         self.entities = entities;
         self.events = events;
         self.combat_hexes = combat_hexes;

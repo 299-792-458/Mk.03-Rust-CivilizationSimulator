@@ -14,6 +14,17 @@ struct BattleRequest {
     nation_b: Nation,
 }
 
+fn apply_war_science_penalty(metrics: &mut crate::simulation::NationMetrics, casualties: u64) {
+    if metrics.population == 0 {
+        return;
+    }
+    let population_before = metrics.population.max(1) as f32;
+    let casualty_ratio = (casualties as f32 / population_before).clamp(0.0, 0.75);
+    let science_loss = metrics.science * casualty_ratio * 0.6 + casualty_ratio * 12.0;
+    metrics.science = (metrics.science - science_loss).max(0.0);
+    metrics.research_stock *= (1.0 - casualty_ratio * 0.65).clamp(0.0, 1.0);
+}
+
 // System to clean up finished combat encounters
 pub fn combat_cleanup_system(mut commands: Commands, mut query: Query<(Entity, &mut InCombat)>) {
     for (entity, mut in_combat) in query.iter_mut() {
@@ -157,6 +168,7 @@ pub fn warfare_system(
             winner_metrics.military -= military_loss;
             winner_metrics.territory = winner_metrics.territory.max(0.0);
             winner_metrics.military = winner_metrics.military.max(0.0);
+            apply_war_science_penalty(winner_metrics, winner_casualties);
             winner_metrics.population = winner_metrics.population.saturating_sub(winner_casualties);
         }
 
@@ -165,6 +177,7 @@ pub fn warfare_system(
             loser_metrics.military -= military_loss;
             loser_metrics.territory = loser_metrics.territory.max(0.0);
             loser_metrics.military = loser_metrics.military.max(0.0);
+            apply_war_science_penalty(loser_metrics, loser_casualties);
             loser_metrics.population = loser_metrics.population.saturating_sub(loser_casualties);
 
             if loser_metrics.territory <= 0.0 {

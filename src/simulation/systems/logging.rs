@@ -21,6 +21,7 @@ fn category_color(category: &str) -> Color {
         "거시충격" => Color::BrightRed,
         "전쟁" => Color::Red,
         "시대" => Color::BrightBlue,
+        "과학" => Color::BrightCyan,
         _ => Color::White,
     }
 }
@@ -182,6 +183,22 @@ fn format_event_line(event: &WorldEvent) -> String {
                 nation_badge,
                 era_badge,
                 weapon_badge
+            )
+        }
+        crate::simulation::WorldEventKind::ScienceProgress { nation, progress } => {
+            let nation_badge = badge(nation.name(), nation.logging_color());
+            let progress_badge = badge(
+                &format!("{:.1}% / 100%", progress.min(100.0)),
+                Color::BrightCyan,
+            );
+            format!(
+                "{} {} {} {} {} {} 달 탐사 진행",
+                category_badge,
+                sentiment_badge,
+                tick_badge,
+                epoch_badge,
+                season_badge,
+                format!("{} {}", nation_badge, progress_badge)
             )
         }
     }

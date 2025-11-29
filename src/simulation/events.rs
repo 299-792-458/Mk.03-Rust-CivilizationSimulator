@@ -39,6 +39,10 @@ pub enum WorldEventKind {
         era: Era,
         weapon: WeaponTier,
     },
+    ScienceProgress {
+        nation: Nation,
+        progress: f32,
+    },
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -78,6 +82,7 @@ impl WorldEvent {
             WorldEventKind::MacroShock { .. } => "거시충격",
             WorldEventKind::Warfare { .. } => "전쟁",
             WorldEventKind::EraShift { .. } => "시대",
+            WorldEventKind::ScienceProgress { .. } => "과학",
         }
     }
 
@@ -88,6 +93,7 @@ impl WorldEvent {
             WorldEventKind::MacroShock { .. } => Sentiment::Negative,
             WorldEventKind::Warfare { .. } => Sentiment::Negative,
             WorldEventKind::EraShift { .. } => Sentiment::Positive,
+            WorldEventKind::ScienceProgress { .. } => Sentiment::Positive,
         }
     }
 
@@ -147,6 +153,11 @@ impl WorldEvent {
                 nation.name(),
                 era.label(),
                 weapon.label()
+            ),
+            WorldEventKind::ScienceProgress { nation, progress } => format!(
+                "{}의 달 탐사 진행 {:.1}% / 100% (1틱=1세대)",
+                nation.name(),
+                progress.min(100.0)
             ),
         }
     }
@@ -254,6 +265,21 @@ impl WorldEvent {
                 era,
                 weapon,
             },
+        }
+    }
+
+    pub fn science_progress(
+        tick: u64,
+        epoch: &str,
+        season: &str,
+        nation: Nation,
+        progress: f32,
+    ) -> Self {
+        Self {
+            tick,
+            epoch: epoch.to_string(),
+            season: season.to_string(),
+            kind: WorldEventKind::ScienceProgress { nation, progress },
         }
     }
 }
