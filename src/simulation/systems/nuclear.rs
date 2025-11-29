@@ -1,8 +1,9 @@
 use bevy_ecs::prelude::*;
 use std::collections::HashSet;
 
-use crate::simulation::{AxialCoord, Hex, NuclearBlasts};
+use crate::simulation::{AxialCoord, NuclearBlasts};
 
+#[allow(dead_code)]
 fn axial_distance(a: AxialCoord, b: AxialCoord) -> i32 {
     ((a.q - b.q).abs() + (a.q + a.r - b.q - b.r).abs() + (a.r - b.r).abs()) / 2
 }
@@ -23,6 +24,7 @@ pub fn nuclear_decay_system(mut blasts: ResMut<NuclearBlasts>) {
 }
 
 /// Marks surrounding hexes when a nuclear strike hits.
+#[allow(dead_code)]
 pub fn mark_nuclear_blast(
     blasts: &mut NuclearBlasts,
     center: AxialCoord,

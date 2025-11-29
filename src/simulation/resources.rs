@@ -169,6 +169,7 @@ impl Default for ScienceVictory {
 }
 
 #[derive(Debug, Resource)]
+#[allow(dead_code)]
 pub struct DeltaTime(pub f32);
 
 impl Default for DeltaTime {

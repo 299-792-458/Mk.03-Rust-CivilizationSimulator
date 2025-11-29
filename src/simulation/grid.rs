@@ -38,6 +38,7 @@ pub struct HexGrid {
     pub radius: i32,
 }
 
+#[allow(dead_code)]
 pub fn default_continent_centers(radius: i32) -> [(Nation, AxialCoord); 3] {
     [
         (Nation::Tera, AxialCoord::new(-radius + 3, radius / 3)),

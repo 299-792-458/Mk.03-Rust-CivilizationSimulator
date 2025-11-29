@@ -3,6 +3,7 @@ use bevy_ecs::prelude::*;
 use crate::simulation::{grid::HexGrid, Hex, WorldRichness};
 
 /// Aggregates a simple "resource richness" overlay based on hex ownership diversity.
+#[allow(dead_code)]
 pub fn richness_overlay_system(
     grid: Res<HexGrid>,
     hexes: Query<&Hex>,
