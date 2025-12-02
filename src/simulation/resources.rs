@@ -135,7 +135,33 @@ pub struct ClimateState {
     pub ice_line: f32,  // 0..1 from top
 }
 
-/// 과학 승리(달 탐사) 진행도 추적.
+/// 우주 시대 진행도 추적.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum SpaceStage {
+    Moon,
+    Mars,
+    Jovian,
+    Interstellar,
+}
+
+impl SpaceStage {
+    pub fn label(&self) -> &'static str {
+        match self {
+            SpaceStage::Moon => "달",
+            SpaceStage::Mars => "화성",
+            SpaceStage::Jovian => "목성권",
+            SpaceStage::Interstellar => "성간",
+        }
+    }
+}
+
+impl Default for SpaceStage {
+    fn default() -> Self {
+        SpaceStage::Moon
+    }
+}
+
+/// 과학/우주 승리 진행도 추적.
 #[derive(Debug, Clone, Resource, Serialize, Deserialize)]
 pub struct ScienceVictory {
     pub progress: HashMap<Nation, f32>,
@@ -147,6 +173,14 @@ pub struct ScienceVictory {
     pub interstellar_mode: bool,
     pub interstellar_progress: f32,
     pub interstellar_goal: f32,
+    pub space_stage: SpaceStage,
+    pub mars_progress: f32,
+    pub mars_goal: f32,
+    pub mars_done: bool,
+    pub jovian_progress: f32,
+    pub jovian_goal: f32,
+    pub jovian_done: bool,
+    pub moon_done: bool,
 }
 
 /// 우주/지질학 타임라인
@@ -191,6 +225,14 @@ impl Default for ScienceVictory {
             interstellar_mode: false,
             interstellar_progress: 0.0,
             interstellar_goal: 100.0,
+            space_stage: SpaceStage::Moon,
+            mars_progress: 0.0,
+            mars_goal: 100.0,
+            mars_done: false,
+            jovian_progress: 0.0,
+            jovian_goal: 100.0,
+            jovian_done: false,
+            moon_done: false,
         }
     }
 }

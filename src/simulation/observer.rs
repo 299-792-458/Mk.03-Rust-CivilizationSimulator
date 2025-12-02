@@ -71,6 +71,11 @@ pub struct ScienceVictorySnapshot {
     pub carbon_ppm: f32,
     pub climate_risk: f32,
     pub biodiversity: f32,
+    pub space_stage: String,
+    pub mars_progress: f32,
+    pub mars_goal: f32,
+    pub jovian_progress: f32,
+    pub jovian_goal: f32,
 }
 
 #[derive(Debug, Clone, Serialize)]

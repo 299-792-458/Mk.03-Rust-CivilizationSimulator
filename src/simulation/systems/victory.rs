@@ -15,7 +15,7 @@ pub fn science_victory_system(
     world_meta: Res<WorldMetadata>,
 ) {
     // Phase 1: 달 탐사 (과학 승리)
-    if !tracker.finished {
+    if !tracker.moon_done {
         let (epoch, season) = world_meta.epoch_for_tick(time.tick);
         let mut leader: Option<(Nation, f32)> = None;
         let goal = tracker.goal;
@@ -116,10 +116,10 @@ pub fn science_victory_system(
                 tracker.leader_history.remove(0);
             }
 
-            if value >= goal && !tracker.finished {
-                tracker.finished = true;
+            if value >= goal && !tracker.moon_done {
+                tracker.moon_done = true;
                 tracker.winner = Some(nation);
-                tracker.interstellar_mode = true;
+                tracker.space_stage = crate::simulation::SpaceStage::Mars;
                 event_log.push(WorldEvent::science_victory(
                     time.tick,
                     epoch,
@@ -129,8 +129,47 @@ pub fn science_victory_system(
                 ));
             }
         }
+    } else if matches!(tracker.space_stage, crate::simulation::SpaceStage::Mars) {
+        let (epoch, season) = world_meta.epoch_for_tick(time.tick);
+        let leader = tracker.winner.unwrap_or(Nation::Tera);
+        let base = tracker.mars_progress;
+        let growth = 0.4 + (base / tracker.mars_goal) * 0.9;
+        tracker.mars_progress = (base + growth).min(tracker.mars_goal);
+        if (time.tick % 8) == 0 {
+            event_log.push(WorldEvent::interstellar_progress(
+                time.tick,
+                epoch,
+                season,
+                leader,
+                tracker.mars_progress,
+            ));
+        }
+        if tracker.mars_progress >= tracker.mars_goal {
+            tracker.mars_done = true;
+            tracker.space_stage = crate::simulation::SpaceStage::Jovian;
+        }
+    } else if matches!(tracker.space_stage, crate::simulation::SpaceStage::Jovian) {
+        let (epoch, season) = world_meta.epoch_for_tick(time.tick);
+        let leader = tracker.winner.unwrap_or(Nation::Tera);
+        let base = tracker.jovian_progress;
+        let growth = 0.35 + (base / tracker.jovian_goal) * 0.8;
+        tracker.jovian_progress = (base + growth).min(tracker.jovian_goal);
+        if (time.tick % 10) == 0 {
+            event_log.push(WorldEvent::interstellar_progress(
+                time.tick,
+                epoch,
+                season,
+                leader,
+                tracker.jovian_progress,
+            ));
+        }
+        if tracker.jovian_progress >= tracker.jovian_goal {
+            tracker.jovian_done = true;
+            tracker.space_stage = crate::simulation::SpaceStage::Interstellar;
+            tracker.interstellar_mode = true;
+        }
     } else if tracker.interstellar_mode {
-        // Phase 2: 성간 확장
+        // Phase 3: 성간 확장
         let (epoch, season) = world_meta.epoch_for_tick(time.tick);
         let leader = tracker.winner.unwrap_or(Nation::Tera);
         let base = tracker.interstellar_progress;
