@@ -110,8 +110,8 @@ impl SimulationWorld {
         let metrics = self.world.resource::<AllNationMetrics>().clone();
         let civ_state = self.world.resource::<AllNationCivState>().clone();
         let nuclear = self.world.resource::<NuclearBlasts>().0.clone();
-        let war_fatigue = self.world.resource::<WarFatigue>().intensity;
-        let richness = self.world.resource::<WorldRichness>().richness;
+        let war_fatigue = self.world.resource::<WarFatigue>().clone();
+        let richness = self.world.resource::<WorldRichness>().clone();
         let climate = self.world.resource::<ClimateState>().clone();
         let science_victory_snapshot = {
             let tracker = self.world.resource::<ScienceVictory>();
@@ -210,9 +210,14 @@ impl SimulationWorld {
                 civ_state,
                 grid_snapshot,
                 observer::WorldOverlaySnapshot {
-                    war_fatigue,
+                    war_fatigue: war_fatigue.intensity,
                     fallout: nuclear.values().map(|v| *v as f32).sum::<f32>(),
-                    resource_richness: richness,
+                    resource_richness: richness.richness,
+                    war_fatigue_history: war_fatigue.history.clone(),
+                    richness_history: richness.history.clone(),
+                    carbon_history: climate.carbon_history.clone(),
+                    climate_risk_history: climate.climate_risk_history.clone(),
+                    biodiversity_history: climate.biodiversity_history.clone(),
                 },
                 science_victory_snapshot,
                 entities,

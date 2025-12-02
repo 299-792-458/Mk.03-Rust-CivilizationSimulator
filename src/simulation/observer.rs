@@ -47,6 +47,11 @@ pub struct WorldOverlaySnapshot {
     pub war_fatigue: f32,
     pub fallout: f32,
     pub resource_richness: f32,
+    pub war_fatigue_history: Vec<f32>,
+    pub richness_history: Vec<f32>,
+    pub carbon_history: Vec<f32>,
+    pub climate_risk_history: Vec<f32>,
+    pub biodiversity_history: Vec<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]

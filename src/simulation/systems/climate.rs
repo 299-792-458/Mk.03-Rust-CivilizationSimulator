@@ -35,6 +35,9 @@ pub fn climate_system(
     climate.climate_risk =
         (climate.carbon_ppm * 0.6 + fatigue.intensity * 0.4 + blast_total as f32 * 0.5) * 0.01;
     climate.climate_risk = climate.climate_risk.clamp(0.0, 100.0);
+    push_history(&mut climate.carbon_history, climate.carbon_ppm);
+    push_history(&mut climate.climate_risk_history, climate.climate_risk);
+    push_history(&mut climate.biodiversity_history, climate.biodiversity);
 
     // Event pulses occasionally
     if time.tick % 24 == 0 {
@@ -52,5 +55,12 @@ pub fn climate_system(
                 casualties: None,
             },
         });
+    }
+}
+
+fn push_history(history: &mut Vec<f32>, value: f32) {
+    history.push(value);
+    if history.len() > 256 {
+        history.remove(0);
     }
 }

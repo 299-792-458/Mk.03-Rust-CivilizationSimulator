@@ -112,12 +112,14 @@ pub struct NuclearBlasts(pub HashMap<crate::simulation::AxialCoord, u8>);
 #[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
 pub struct WarFatigue {
     pub intensity: f32,
+    pub history: Vec<f32>,
 }
 
 #[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
 pub struct WorldRichness {
     /// Aggregated richness score for TUI overlay (0..1)
     pub richness: f32,
+    pub history: Vec<f32>,
 }
 
 /// 전지구 생태/기후 상태
@@ -126,6 +128,9 @@ pub struct ClimateState {
     pub carbon_ppm: f32,
     pub climate_risk: f32,
     pub biodiversity: f32,
+    pub carbon_history: Vec<f32>,
+    pub climate_risk_history: Vec<f32>,
+    pub biodiversity_history: Vec<f32>,
 }
 
 /// 과학 승리(달 탐사) 진행도 추적.

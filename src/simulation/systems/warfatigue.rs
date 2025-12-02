@@ -46,6 +46,7 @@ pub fn war_fatigue_system(
     }
 
     fatigue.intensity = fatigue.intensity.clamp(0.0, 100.0);
+    push_history(&mut fatigue.history, fatigue.intensity);
 
     // Apply soft penalties to all nations to reflect global weariness
     let penalty = fatigue.intensity * 0.02;
@@ -53,5 +54,12 @@ pub fn war_fatigue_system(
         m.economy = (m.economy - penalty).max(0.0);
         m.culture = (m.culture - penalty * 0.5).max(0.0);
         m.military = (m.military - penalty * 0.25).max(0.0);
+    }
+}
+
+fn push_history(history: &mut Vec<f32>, value: f32) {
+    history.push(value);
+    if history.len() > 256 {
+        history.remove(0);
     }
 }

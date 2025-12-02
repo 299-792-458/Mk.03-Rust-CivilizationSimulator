@@ -7,6 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Paragraph, Row, Sparkline, Table},
 };
 use std::time::Duration;
+use std::collections::HashMap;
 
 pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Duration) {
     // Main layout
@@ -55,6 +56,14 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
             Style::default().fg(Color::Cyan).bold(),
         )));
     }
+    header_lines.push(Line::from(vec![
+        Span::styled("Chronicle ", Style::default().fg(Color::LightYellow).bold()),
+        Span::raw("→ "),
+        Span::styled(
+            narrative_ticker(snapshot),
+            Style::default().fg(Color::White),
+        ),
+    ]));
 
     let header_paragraph = Paragraph::new(header_lines).block(Block::new().borders(Borders::TOP));
     frame.render_widget(header_paragraph, main_layout[0]);
@@ -264,7 +273,13 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
             .borders(Borders::ALL),
     );
 
-    frame.render_widget(table, content_layout[1]);
+    let event_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(5), Constraint::Min(0)])
+        .split(content_layout[1]);
+
+    render_event_leaderboard(frame, event_layout[0], snapshot);
+    frame.render_widget(table, event_layout[1]);
 }
 
 fn render_world_state_panel(
@@ -280,8 +295,10 @@ fn render_world_state_panel(
         .direction(Direction::Vertical)
         .margin(1)
         .constraints([
-            Constraint::Length(3),
+            Constraint::Length(4),
             Constraint::Length(7),
+            Constraint::Length(12),
+            Constraint::Length(5),
             Constraint::Min(0),
             Constraint::Length(3),
         ])
@@ -358,6 +375,8 @@ fn render_world_state_panel(
     frame.render_widget(info_paragraph, panel_layout[0]);
 
     render_science_progress_panel(frame, panel_layout[1], snapshot);
+    render_evolutionary_charts(frame, panel_layout[2], snapshot);
+    render_glory_tiles(frame, panel_layout[3], snapshot);
 
     let mut nations: Vec<_> = snapshot.all_metrics.0.keys().copied().collect();
     nations.sort_by_key(|a| a.name());
@@ -369,7 +388,7 @@ fn render_world_state_panel(
     let nations_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(constraints)
-        .split(panel_layout[2]);
+        .split(panel_layout[4]);
 
     for (i, &nation) in nations.iter().enumerate() {
         if i >= nations_layout.len() {
@@ -483,7 +502,7 @@ fn render_world_state_panel(
         Span::from("]"),
     ]));
     let speed_paragraph = Paragraph::new(speed_lines);
-    frame.render_widget(speed_paragraph, panel_layout[3]);
+    frame.render_widget(speed_paragraph, panel_layout[5]);
 }
 
 fn render_science_progress_panel(
@@ -538,6 +557,80 @@ fn render_science_progress_panel(
             Color::Cyan
         }));
     frame.render_widget(sparkline, layout[1]);
+}
+
+fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
+    let block = Block::default()
+        .title("Evolutionary Markets — 50억년 포트폴리오 흐름")
+        .borders(Borders::ALL);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let lanes = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(2),
+            Constraint::Length(4),
+            Constraint::Length(4),
+            Constraint::Length(4),
+        ])
+        .split(inner);
+
+    let legend = Paragraph::new(vec![
+        Line::from(Span::styled(
+            "창발적 시간축과 거시 충격을 티커처럼 병렬 시각화",
+            Style::default().fg(Color::LightCyan),
+        )),
+        Line::from("세대별 모멘텀 · 사건 밀도 · 분위기 벡터"),
+    ]);
+    frame.render_widget(legend, lanes[0]);
+
+    let mut moon_series: Vec<u64> = snapshot
+        .science_victory
+        .history
+        .iter()
+        .map(|v| v.min(snapshot.science_victory.goal).round() as u64)
+        .collect();
+    ensure_nonempty(&mut moon_series);
+    let moon = Sparkline::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Moonshot Momentum — 주도국 궤도"),
+        )
+        .data(&moon_series)
+        .max(snapshot.science_victory.goal.max(1.0) as u64)
+        .style(
+            Style::default()
+                .fg(Color::LightGreen)
+                .bg(Color::Rgb(20, 20, 30)),
+        );
+    frame.render_widget(moon, lanes[1]);
+
+    let event_density = build_event_density_series(snapshot, (inner.width as usize).max(24));
+    let density = Sparkline::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Event Density — 전쟁·무역·충격 거래량"),
+        )
+        .data(&event_density)
+        .max(event_density.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::Yellow));
+    frame.render_widget(density, lanes[2]);
+
+    let sentiment_curve =
+        build_sentiment_series(snapshot, (inner.width as usize / 2).max(16), snapshot.tick);
+    let sentiment = Sparkline::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Pulse / Sentiment — 진화적 무드 드리프트"),
+        )
+        .data(&sentiment_curve)
+        .max(sentiment_curve.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::Magenta));
+    frame.render_widget(sentiment, lanes[3]);
 }
 
 struct MapWidget<'a> {
@@ -666,4 +759,65 @@ fn create_bar(value: f32, max_value: f32, max_width: usize, color: Color) -> Lin
         Span::raw("]"),
         text_span,
     ])
+}
+
+fn build_event_density_series(snapshot: &ObserverSnapshot, buckets: usize) -> Vec<u64> {
+    if buckets == 0 {
+        return vec![0];
+    }
+    let bucket_size = ((snapshot.tick + 1) as f32 / buckets as f32).ceil().max(1.0) as u64;
+    let mut series = vec![0u64; buckets];
+
+    for event in &snapshot.events {
+        let index = (event.tick / bucket_size).min((buckets - 1) as u64) as usize;
+        series[index] += 1;
+    }
+
+    ensure_nonempty(&mut series);
+    series
+}
+
+fn build_sentiment_series(
+    snapshot: &ObserverSnapshot,
+    buckets: usize,
+    last_tick: u64,
+) -> Vec<u64> {
+    if buckets == 0 {
+        return vec![0];
+    }
+    let bucket_size = ((last_tick + 1) as f32 / buckets as f32).ceil().max(1.0) as u64;
+    let mut series = vec![0i64; buckets];
+
+    for event in &snapshot.events {
+        let index = (event.tick / bucket_size).min((buckets - 1) as u64) as usize;
+        let delta = match event.kind {
+            WorldEventKind::MacroShock { .. } | WorldEventKind::Warfare { .. } => -2,
+            WorldEventKind::ScienceVictory { .. } | WorldEventKind::InterstellarVictory { .. } => {
+                3
+            }
+            WorldEventKind::ScienceProgress { .. }
+            | WorldEventKind::InterstellarProgress { .. }
+            | WorldEventKind::EraShift { .. } => 2,
+            WorldEventKind::Trade { .. } | WorldEventKind::Social { .. } => 1,
+        };
+        series[index] += delta;
+    }
+
+    let min_value = *series.iter().min().unwrap_or(&0);
+    let offset = if min_value < 0 { -min_value as u64 } else { 0 };
+    let mut shifted: Vec<u64> = series
+        .into_iter()
+        .map(|v| (v + offset as i64) as u64)
+        .collect();
+    ensure_nonempty(&mut shifted);
+    shifted
+}
+
+fn ensure_nonempty(series: &mut Vec<u64>) {
+    if series.is_empty() {
+        series.push(0);
+    }
+    if series.iter().all(|v| *v == 0) {
+        series[0] = 1;
+    }
 }
