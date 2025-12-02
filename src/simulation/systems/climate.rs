@@ -35,9 +35,13 @@ pub fn climate_system(
     climate.climate_risk =
         (climate.carbon_ppm * 0.6 + fatigue.intensity * 0.4 + blast_total as f32 * 0.5) * 0.01;
     climate.climate_risk = climate.climate_risk.clamp(0.0, 100.0);
-    push_history(&mut climate.carbon_history, climate.carbon_ppm);
-    push_history(&mut climate.climate_risk_history, climate.climate_risk);
-    push_history(&mut climate.biodiversity_history, climate.biodiversity);
+
+    let carbon_ppm = climate.carbon_ppm;
+    let risk = climate.climate_risk;
+    let bio = climate.biodiversity;
+    push_history(&mut climate.carbon_history, carbon_ppm);
+    push_history(&mut climate.climate_risk_history, risk);
+    push_history(&mut climate.biodiversity_history, bio);
 
     // Event pulses occasionally
     if time.tick % 24 == 0 {

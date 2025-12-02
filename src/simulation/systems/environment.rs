@@ -46,7 +46,8 @@ pub fn richness_overlay_system(mut richness: ResMut<WorldRichness>, all_metrics:
         }
     }
     richness.richness = if count > 0.0 { (total / count) / 100.0 } else { 0.0 };
-    push_history(&mut richness.history, richness.richness * 100.0);
+    let value = richness.richness;
+    push_history(&mut richness.history, value * 100.0);
 }
 
 /// Applies climate penalties/bonuses to nation metrics based on global climate state.

@@ -4,10 +4,46 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Sparkline, Table},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Sparkline, Table, Wrap},
 };
 use std::time::Duration;
 use std::collections::HashMap;
+
+const WORLD_ATLAS: &str = r#"
+............................................................................................................................
+.............%%%%%%%%%%......................%%%%%%%%%%%%%%....................................................%%%%%%%%%%%%..
+...........%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%.................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...................%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%.........%%%%%.....%%%%%%%%%%%%%%%%%%................................................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%........%%%%%%%....%%%%%%%%%%%%%%%%%%..............%%%%%%............................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%.......%%%%%%%%...%%%%%%%%%%%%%%%%%%%............%%%%%%%%...........................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%......%%%%%%%%%...%%%%%%%%%%%%%%%%%%%...........%%%%%%%%%...........................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%.....%%%%%%%%%%...%%%%%%%%%%%%%%%%%%%..........%%%%%%%%%%...........................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%....%%%%%%%%%%%...%%%%%%%%%%%%%%%%%%%.........%%%%%%%%%%%...........................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...%%%%%%%%%%%%...%%%%%%%%%%%%%%%%%%%........%%%%%%%%%%%%...........................%%%%%%%%%%%%%..
+..........%%%%%%%%%%%%%%%...%%%%%%%%%%%%...%%%%%%%%%%%%%%%%%%%........%%%%%%%%%%%%...........................%%%%%%%%%%%%%..
+............................................................................................................................
+....%%%%%....................................................................................................................
+...%%%%%%%%...........................................................................................%%%%%%%%%%%%............
+..%%%%%%%%%%%........................................................................................%%%%%%%%%%%%%%%..........
+..%%%%%%%%%%%%%.....................................................................................%%%%%%%%%%%%%%%%..........
+..%%%%%%%%%%%%%%%...................................................................................%%%%%%%%%%%%%%%%..........
+...%%%%%%%%%%%%%%%.....................................................%%%%%%.......................%%%%%%%%%%%%%%%%..........
+....%%%%%%%%%%%%%%....................................................%%%%%%%%......................%%%%%%%%%%%%%%%%..........
+.....%%%%%%%%%%%%%...................................................%%%%%%%%%......................%%%%%%%%%%%%%%%..........
+......%%%%%%%%%%%....................................................%%%%%%%%%.......................%%%%%%%%%%%%%...........
+.......%%%%%%%%%.....................................................%%%%%%%%........................%%%%%%%%%%%%............
+........%%%%%%.......................................................%%%%%%%.........................%%%%%%%%%%..............
+............................................................................................................................
+"#;
 
 pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Duration) {
     // Main layout
@@ -299,6 +335,7 @@ fn render_world_state_panel(
             Constraint::Length(7),
             Constraint::Length(12),
             Constraint::Length(5),
+            Constraint::Length(6),
             Constraint::Min(0),
             Constraint::Length(3),
         ])
@@ -377,6 +414,7 @@ fn render_world_state_panel(
     render_science_progress_panel(frame, panel_layout[1], snapshot);
     render_evolutionary_charts(frame, panel_layout[2], snapshot);
     render_glory_tiles(frame, panel_layout[3], snapshot);
+    render_war_theater_panel(frame, panel_layout[4], snapshot);
 
     let mut nations: Vec<_> = snapshot.all_metrics.0.keys().copied().collect();
     nations.sort_by_key(|a| a.name());
@@ -388,7 +426,7 @@ fn render_world_state_panel(
     let nations_layout = Layout::default()
         .direction(Direction::Horizontal)
         .constraints(constraints)
-        .split(panel_layout[4]);
+        .split(panel_layout[5]);
 
     for (i, &nation) in nations.iter().enumerate() {
         if i >= nations_layout.len() {
@@ -502,7 +540,7 @@ fn render_world_state_panel(
         Span::from("]"),
     ]));
     let speed_paragraph = Paragraph::new(speed_lines);
-    frame.render_widget(speed_paragraph, panel_layout[5]);
+    frame.render_widget(speed_paragraph, panel_layout[6]);
 }
 
 fn render_science_progress_panel(
@@ -841,118 +879,201 @@ fn render_glory_tiles(
     }
 }
 
+fn render_war_theater_panel(
+    frame: &mut Frame,
+    area: Rect,
+    snapshot: &ObserverSnapshot,
+) {
+    let block = Block::default().borders(Borders::ALL).title("War Theater");
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let mut lines = vec![];
+    lines.push(Line::from(vec![
+        Span::styled(
+            format!("War Fatigue {:.1}", snapshot.overlay.war_fatigue),
+            Style::default().fg(Color::LightRed),
+        ),
+        Span::raw(" | Active Nukes "),
+        Span::styled(
+            snapshot.nuclear_hexes.len().to_string(),
+            Style::default().fg(Color::Yellow),
+        ),
+        Span::raw(" | Fronts "),
+        Span::styled(
+            snapshot.combat_hexes.len().to_string(),
+            Style::default().fg(Color::Red),
+        ),
+    ]));
+
+    // Top armies
+    let mut armies: Vec<_> = snapshot
+        .all_metrics
+        .0
+        .iter()
+        .map(|(nation, metrics)| (nation, metrics.military, metrics.territory))
+        .collect();
+    armies.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    for (nation, mil, terr) in armies.into_iter().take(3) {
+        lines.push(Line::from(Span::styled(
+            format!(
+                "{} 군사 {:.1} / 영토 {:.1}",
+                nation.name(),
+                mil,
+                terr
+            ),
+            Style::default().fg(nation.color()),
+        )));
+    }
+
+    let mut recent_battles = snapshot
+        .events
+        .iter()
+        .rev()
+        .filter_map(|e| {
+            if let WorldEventKind::Warfare {
+                winner,
+                loser,
+                nuclear,
+                casualties,
+                ..
+            } = &e.kind
+            {
+                Some((
+                    winner.name().to_string(),
+                    loser.name().to_string(),
+                    *nuclear,
+                    *casualties,
+                ))
+            } else {
+                None
+            }
+        })
+        .take(3)
+        .collect::<Vec<_>>();
+
+    if recent_battles.is_empty() {
+        lines.push(Line::from("최근 전투 없음 — 달 착륙 집중"));
+    } else {
+        lines.push(Line::from(Span::styled(
+            "최근 전투",
+            Style::default().bold().fg(Color::White),
+        )));
+        for (win, lose, nuclear, casualties) in recent_battles.drain(..) {
+            lines.push(Line::from(format!(
+                "{} vs {}{} | 사상자 {}",
+                win,
+                lose,
+                if nuclear { " (핵)" } else { "" },
+                format_number_commas(casualties)
+            )));
+        }
+    }
+
+    let paragraph = Paragraph::new(lines).wrap(Wrap { trim: true });
+    frame.render_widget(paragraph, inner);
+}
+
 struct MapWidget<'a> {
     snapshot: &'a ObserverSnapshot,
 }
 
 impl<'a> Widget for MapWidget<'a> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        let grid = &self.snapshot.grid;
-        let center_x = area.x + area.width / 2;
-        let center_y = area.y + area.height / 2;
+        let atlas: Vec<&str> = WORLD_ATLAS.trim_matches('\n').lines().collect();
+        if atlas.is_empty() {
+            return;
+        }
+        let atlas_height = atlas.len() as f32;
+        let atlas_width = atlas[0].len() as f32;
         let tick = self.snapshot.tick;
-        let epoch_pulse = tick % 24 < 4;
-        let season_wave = tick % 12 < 3;
+        let season = self.snapshot.season.as_str();
+        let leader = self.snapshot.science_victory.leader;
 
-        let (season_tint, glow_char) = match self.snapshot.season.as_str() {
-            "불꽃 절정" => (Color::LightRed, "░"),
-            "잿불 내림" => (Color::DarkGray, "▒"),
-            _ => (Color::LightGreen, "·"),
+        let season_tint = match season {
+            "불꽃 절정" => Color::Rgb(255, 120, 80),
+            "잿불 내림" => Color::DarkGray,
+            _ => Color::LightGreen,
         };
 
+        for y in 0..area.height {
+            for x in 0..area.width {
+                let atlas_x = ((x as f32 / area.width as f32) * atlas_width)
+                    .floor()
+                    .min(atlas_width - 1.0) as usize;
+                let atlas_y = ((y as f32 / area.height as f32) * atlas_height)
+                    .floor()
+                    .min(atlas_height - 1.0) as usize;
+                let ch = atlas[atlas_y].as_bytes()[atlas_x] as char;
+                let is_land = ch == '%' || ch == '#' || ch == '█';
+
+                let base_char = if is_land { "▓" } else { "·" };
+                let mut color = if is_land {
+                    season_tint
+                } else {
+                    Color::Rgb(70, 110, 160)
+                };
+
+                // Dynamic accents
+                if is_land && (tick + x as u64 + y as u64) % 13 == 0 {
+                    color = Color::LightYellow;
+                }
+                if !is_land && tick % 5 == 0 {
+                    color = Color::Rgb(90, 140, 200);
+                }
+
+                buf.set_string(area.x + x, area.y + y, base_char, Style::default().fg(color));
+            }
+        }
+
+        // Overlay hot zones
+        let center_x = area.x + area.width / 2;
+        let center_y = area.y + area.height / 2;
+        let grid = &self.snapshot.grid;
+        // Territories overlay
         for (&coord, hex) in &grid.hexes {
-            // Convert axial to screen coordinates (flat-top hexes)
-            // Use compact spacing but keep stagger for world-outline fidelity
-            let hex_width = 1;
-            let hex_height = 1;
             let screen_x = center_x as i32 + coord.q * 2 + coord.r;
             let screen_y = center_y as i32 + coord.r;
-
-            let hex_char = if Some(hex.owner) == self.snapshot.science_victory.leader {
-                "◆"
-            } else {
-                "█"
-            };
-
-            let mut color = if tick % 5 == 0 {
-                season_tint
-            } else {
-                hex.owner.color()
-            };
-
-            if epoch_pulse && Some(hex.owner) == self.snapshot.science_victory.leader {
-                color = Color::Rgb(255, 210, 150);
-            } else if season_wave && tick % 2 == 0 {
-                color = Color::Rgb(180, 220, 180);
-            }
-
-            // Twinkling effect for combat zones
-            if self.snapshot.nuclear_hexes.contains(&coord) {
-                color = Color::Yellow;
-                let blast_char = "◎";
-                if screen_x >= area.x as i32
-                    && screen_x + 1 <= (area.x + area.width) as i32
-                    && screen_y >= area.y as i32
-                    && screen_y + 1 <= (area.y + area.height) as i32
-                {
-                    buf.set_string(
-                        screen_x as u16,
-                        screen_y as u16,
-                        blast_char,
-                        Style::default().fg(color),
-                    );
-                }
-                continue;
-            } else if self.snapshot.combat_hexes.contains(&coord) {
-                if self.snapshot.tick % 2 == 0 {
-                    color = Color::White; // Bright color for twinkling
-                }
-            }
-
-            // Ambient shimmer based on seasonal mood
-            if tick % 7 == 0 {
-                let within = screen_x >= area.x as i32
-                    && screen_x + hex_width <= (area.x + area.width) as i32
-                    && screen_y + 1 >= area.y as i32
-                    && screen_y + 1 < (area.y + area.height) as i32;
-                if within {
-                    buf.set_string(
-                        screen_x as u16,
-                        (screen_y + 1) as u16,
-                        glow_char,
-                        Style::default().fg(season_tint),
-                    );
-                }
-            }
-
-            // Climate risk shimmer
-            if self.snapshot.science_victory.climate_risk > 60.0 && tick % 3 == 0 {
-                if screen_x >= area.x as i32
-                    && screen_x + hex_width <= (area.x + area.width) as i32
-                    && screen_y >= area.y as i32
-                    && screen_y + hex_height <= (area.y + area.height) as i32
-                {
-                    buf.set_string(
-                        screen_x as u16,
-                        screen_y as u16,
-                        "∙",
-                        Style::default().fg(Color::Red),
-                    );
-                }
-            }
-
-            // Draw the hex character
-            if screen_x >= area.x as i32
-                && screen_x + hex_width <= (area.x + area.width) as i32
-                && screen_y >= area.y as i32
-                && screen_y + hex_height <= (area.y + area.height) as i32
+            if screen_x < area.x as i32
+                || screen_x >= (area.x + area.width) as i32
+                || screen_y < area.y as i32
+                || screen_y >= (area.y + area.height) as i32
             {
+                continue;
+            }
+            let mut style = Style::default().fg(hex.owner.color());
+            if Some(hex.owner) == leader {
+                style = style.bold();
+            }
+            let glyph = if Some(hex.owner) == leader { "◆" } else { "█" };
+            buf.set_string(screen_x as u16, screen_y as u16, glyph, style);
+        }
+
+        // Conflict overlays
+        for (&coord, _) in &grid.hexes {
+            let screen_x = center_x as i32 + coord.q * 2 + coord.r;
+            let screen_y = center_y as i32 + coord.r;
+            if screen_x < area.x as i32
+                || screen_x >= (area.x + area.width) as i32
+                || screen_y < area.y as i32
+                || screen_y >= (area.y + area.height) as i32
+            {
+                continue;
+            }
+            if self.snapshot.nuclear_hexes.contains(&coord) {
                 buf.set_string(
                     screen_x as u16,
                     screen_y as u16,
-                    hex_char,
-                    Style::default().fg(color),
+                    "◎",
+                    Style::default().fg(Color::Yellow).bg(Color::Red),
                 );
+            } else if self.snapshot.combat_hexes.contains(&coord) {
+                let style = if tick % 2 == 0 {
+                    Style::default().fg(Color::White)
+                } else {
+                    Style::default().fg(Color::Red)
+                };
+                buf.set_string(screen_x as u16, screen_y as u16, "✸", style);
             }
         }
     }
@@ -1039,14 +1160,17 @@ fn ensure_nonempty(series: &mut Vec<u64>) {
 }
 
 fn series_from_history(history: &[f32], scale: f32) -> Vec<u64> {
-    let mut data: Vec<u64> = history
+    let mut data: Vec<f32> = history
         .iter()
         .rev()
         .take(120)
         .cloned()
         .collect::<Vec<f32>>();
     data.reverse();
-    let mut mapped: Vec<u64> = data.iter().map(|v| (v * scale).abs().round() as u64).collect();
+    let mut mapped: Vec<u64> = data
+        .iter()
+        .map(|v| (v * scale).abs().round() as u64)
+        .collect();
     ensure_nonempty(&mut mapped);
     mapped
 }
