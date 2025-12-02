@@ -570,11 +570,11 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(2),
-            Constraint::Length(4),
-            Constraint::Length(5),
             Constraint::Length(3),
             Constraint::Length(3),
-            Constraint::Length(3),
+            Constraint::Length(2),
+            Constraint::Length(2),
+            Constraint::Length(2),
         ])
         .split(inner);
 
@@ -622,11 +622,11 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
 
     let planet_left = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(2), Constraint::Length(3)])
+        .constraints([Constraint::Length(1), Constraint::Length(2)])
         .split(climate_lane[0]);
     let planet_right = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(2), Constraint::Length(3)])
+        .constraints([Constraint::Length(1), Constraint::Length(2)])
         .split(climate_lane[1]);
 
     let carbon = Sparkline::default()
@@ -687,7 +687,158 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         .data(&sentiment_curve)
         .max(sentiment_curve.iter().cloned().max().unwrap_or(1))
         .style(Style::default().fg(Color::Magenta));
-    frame.render_widget(sentiment, lanes[3]);
+    frame.render_widget(sentiment, lanes[5]);
+}
+
+fn render_event_leaderboard(
+    frame: &mut Frame,
+    area: Rect,
+    snapshot: &ObserverSnapshot,
+) {
+    let mut counts: HashMap<&'static str, u64> = HashMap::new();
+    let mut sentiment_score: HashMap<&'static str, i64> = HashMap::new();
+
+    for event in snapshot.events.iter().rev().take(120) {
+        let cat = event.category();
+        *counts.entry(cat).or_default() += 1;
+        let delta = match event.sentiment() {
+            crate::simulation::Sentiment::Positive => 1,
+            crate::simulation::Sentiment::Negative => -2,
+            crate::simulation::Sentiment::Neutral => 0,
+        };
+        *sentiment_score.entry(cat).or_default() += delta;
+    }
+
+    let categories = [
+        "전쟁",
+        "무역",
+        "사회",
+        "거시충격",
+        "과학",
+        "우주",
+        "시대",
+    ];
+    let max_count = counts.values().cloned().max().unwrap_or(1);
+
+    let rows: Vec<Row> = categories
+        .iter()
+        .map(|cat| {
+            let count = counts.get(cat).cloned().unwrap_or(0);
+            let score = sentiment_score.get(cat).cloned().unwrap_or(0);
+            let bar = heat_bar(count, max_count, 12);
+            Row::new(vec![
+                Cell::from(*cat),
+                Cell::from(count.to_string()),
+                Cell::from(score.to_string()),
+                Cell::from(bar),
+            ])
+        })
+        .collect();
+
+    let table = Table::new(
+        rows,
+        [
+            Constraint::Length(8),
+            Constraint::Length(6),
+            Constraint::Length(6),
+            Constraint::Min(10),
+        ],
+    )
+    .header(
+        Row::new(vec!["종류", "거래량", "감성", "히트"])
+            .style(Style::default().fg(Color::White).bold()),
+    )
+    .block(Block::default().borders(Borders::ALL).title("사건 리더보드"));
+
+    frame.render_widget(table, area);
+}
+
+fn render_glory_tiles(
+    frame: &mut Frame,
+    area: Rect,
+    snapshot: &ObserverSnapshot,
+) {
+    let block = Block::default().borders(Borders::ALL).title("명예의 전당");
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let tiles_layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Ratio(1, 4),
+            Constraint::Ratio(1, 4),
+            Constraint::Ratio(1, 4),
+            Constraint::Ratio(1, 4),
+        ])
+        .split(inner);
+
+    let top_pop = snapshot
+        .all_metrics
+        .0
+        .iter()
+        .max_by_key(|(_, m)| m.population)
+        .map(|(n, m)| (n, m.population));
+    let top_gdp = snapshot
+        .all_metrics
+        .0
+        .iter()
+        .max_by(|a, b| a.1.economy.partial_cmp(&b.1.economy).unwrap_or(std::cmp::Ordering::Equal));
+    let science_leader = snapshot
+        .science_victory
+        .leader
+        .map(|n| (n, snapshot.science_victory.leader_progress));
+
+    let mut war_wins: HashMap<String, u32> = HashMap::new();
+    for event in snapshot.events.iter().rev().take(200) {
+        if let WorldEventKind::Warfare { winner, .. } = &event.kind {
+            *war_wins.entry(winner.name().to_string()).or_default() += 1;
+        }
+    }
+    let war_champ = war_wins
+        .iter()
+        .max_by_key(|(_, v)| **v)
+        .map(|(name, wins)| (name.clone(), *wins));
+
+    let cards = vec![
+        (
+            "인구 정점",
+            top_pop
+                .map(|(n, pop)| format!("{} | {}명", n.name(), format_number_commas(pop)))
+                .unwrap_or_else(|| "데이터 없음".to_string()),
+            Color::LightCyan,
+        ),
+        (
+            "경제 패권",
+            top_gdp
+                .map(|(n, m)| format!("{} | 경제 {:.1}", n.name(), m.economy))
+                .unwrap_or_else(|| "데이터 없음".to_string()),
+            Color::LightGreen,
+        ),
+        (
+            "과학 선두",
+            science_leader
+                .map(|(n, p)| format!("{} | {:.1}% 달", n.name(), p))
+                .unwrap_or_else(|| "미정".to_string()),
+            Color::Yellow,
+        ),
+        (
+            "전쟁 승률",
+            war_champ
+                .map(|(n, w)| format!("{} | {}승", n, w))
+                .unwrap_or_else(|| "평화".to_string()),
+            Color::LightRed,
+        ),
+    ];
+
+    for (i, (title, body, color)) in cards.into_iter().enumerate() {
+        if i < tiles_layout.len() {
+            let lines = vec![
+                Line::from(Span::styled(title, Style::default().fg(color).bold())),
+                Line::from(body),
+            ];
+            frame.render_widget(Paragraph::new(lines), tiles_layout[i]);
+        }
+    }
 }
 
 struct MapWidget<'a> {
@@ -700,6 +851,8 @@ impl<'a> Widget for MapWidget<'a> {
         let center_x = area.x + area.width / 2;
         let center_y = area.y + area.height / 2;
         let tick = self.snapshot.tick;
+        let epoch_pulse = tick % 24 < 4;
+        let season_wave = tick % 12 < 3;
 
         let (season_tint, glow_char) = match self.snapshot.season.as_str() {
             "불꽃 절정" => (Color::LightRed, "░"),
@@ -726,6 +879,12 @@ impl<'a> Widget for MapWidget<'a> {
             } else {
                 hex.owner.color()
             };
+
+            if epoch_pulse && Some(hex.owner) == self.snapshot.science_victory.leader {
+                color = Color::Rgb(255, 210, 150);
+            } else if season_wave && tick % 2 == 0 {
+                color = Color::Rgb(180, 220, 180);
+            }
 
             // Twinkling effect for combat zones
             if self.snapshot.nuclear_hexes.contains(&coord) {
@@ -876,5 +1035,68 @@ fn ensure_nonempty(series: &mut Vec<u64>) {
     }
     if series.iter().all(|v| *v == 0) {
         series[0] = 1;
+    }
+}
+
+fn series_from_history(history: &[f32], scale: f32) -> Vec<u64> {
+    let mut data: Vec<u64> = history
+        .iter()
+        .rev()
+        .take(120)
+        .cloned()
+        .collect::<Vec<f32>>();
+    data.reverse();
+    let mut mapped: Vec<u64> = data.iter().map(|v| (v * scale).abs().round() as u64).collect();
+    ensure_nonempty(&mut mapped);
+    mapped
+}
+
+fn heat_bar(value: u64, max: u64, width: usize) -> String {
+    let max = max.max(1);
+    let filled = ((value as f32 / max as f32) * width as f32).round() as usize;
+    let mut bar = "█".repeat(filled.min(width));
+    bar.push_str(&"░".repeat(width.saturating_sub(filled)));
+    bar
+}
+
+fn narrative_ticker(snapshot: &ObserverSnapshot) -> String {
+    let mut snippets = Vec::new();
+    for event in snapshot.events.iter().rev().take(3) {
+        let snippet = match &event.kind {
+            WorldEventKind::Trade { actor, trade_focus, .. } => {
+                format!("{} 무역 — {}", actor.nation.name(), trade_focus)
+            }
+            WorldEventKind::Social { convener, gathering_theme, .. } => {
+                format!("{} 모임 — {}", convener.nation.name(), gathering_theme)
+            }
+            WorldEventKind::MacroShock { stressor, projected_impact, .. } => {
+                format!("충격 {} → {}", stressor, projected_impact)
+            }
+            WorldEventKind::Warfare { winner, loser, nuclear, .. } => {
+                format!("{} {} {}{}", winner.name(), if *nuclear { "핵" } else { "전" }, loser.name(), if *nuclear { "!" } else { "" })
+            }
+            WorldEventKind::EraShift { nation, era, .. } => {
+                format!("{} 시대 상승 → {}", nation.name(), era.label())
+            }
+            WorldEventKind::ScienceProgress { nation, progress } => {
+                format!("{} 달 {:.0}%", nation.name(), progress)
+            }
+            WorldEventKind::ScienceVictory { winner, .. } => {
+                format!("{} 과학 승리", winner.name())
+            }
+            WorldEventKind::InterstellarProgress { leader, progress } => {
+                format!("{} 성간 {:.0}%", leader.name(), progress)
+            }
+            WorldEventKind::InterstellarVictory { winner, .. } => {
+                format!("{} 우주 문명", winner.name())
+            }
+        };
+        snippets.push(snippet);
+    }
+
+    if snippets.is_empty() {
+        "고요한 순간 — 데이터 수집 중".to_string()
+    } else {
+        snippets.join(" · ")
     }
 }
