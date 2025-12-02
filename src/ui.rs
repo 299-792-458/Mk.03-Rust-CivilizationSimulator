@@ -571,8 +571,10 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         .constraints([
             Constraint::Length(2),
             Constraint::Length(4),
-            Constraint::Length(4),
-            Constraint::Length(4),
+            Constraint::Length(5),
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
         ])
         .split(inner);
 
@@ -607,6 +609,61 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         );
     frame.render_widget(moon, lanes[1]);
 
+    let climate_lane = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Ratio(1, 2), Constraint::Ratio(1, 2)])
+        .split(lanes[2]);
+
+    let carbon_series = series_from_history(&snapshot.overlay.carbon_history, 1.0);
+    let biodiversity_series = series_from_history(&snapshot.overlay.biodiversity_history, 1.0);
+    let risk_series = series_from_history(&snapshot.overlay.climate_risk_history, 1.0);
+    let war_series = series_from_history(&snapshot.overlay.war_fatigue_history, 1.0);
+    let richness_series = series_from_history(&snapshot.overlay.richness_history, 100.0);
+
+    let planet_left = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2), Constraint::Length(3)])
+        .split(climate_lane[0]);
+    let planet_right = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2), Constraint::Length(3)])
+        .split(climate_lane[1]);
+
+    let carbon = Sparkline::default()
+        .block(Block::default().borders(Borders::ALL).title("Carbon ppm"))
+        .data(&carbon_series)
+        .max(carbon_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::Red));
+    frame.render_widget(carbon, planet_left[0]);
+
+    let biodiversity = Sparkline::default()
+        .block(Block::default().borders(Borders::ALL).title("Biodiversity"))
+        .data(&biodiversity_series)
+        .max(biodiversity_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::Green));
+    frame.render_widget(biodiversity, planet_left[1]);
+
+    let risk = Sparkline::default()
+        .block(Block::default().borders(Borders::ALL).title("Climate Risk"))
+        .data(&risk_series)
+        .max(risk_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::Yellow));
+    frame.render_widget(risk, planet_right[0]);
+
+    let warfatigue = Sparkline::default()
+        .block(Block::default().borders(Borders::ALL).title("War Fatigue"))
+        .data(&war_series)
+        .max(war_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::LightRed));
+    frame.render_widget(warfatigue, planet_right[1]);
+
+    let richness = Sparkline::default()
+        .block(Block::default().borders(Borders::ALL).title("Richness %"))
+        .data(&richness_series)
+        .max(richness_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::LightBlue));
+    frame.render_widget(richness, lanes[3]);
+
     let event_density = build_event_density_series(snapshot, (inner.width as usize).max(24));
     let density = Sparkline::default()
         .block(
@@ -617,7 +674,7 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         .data(&event_density)
         .max(event_density.iter().cloned().max().unwrap_or(1))
         .style(Style::default().fg(Color::Yellow));
-    frame.render_widget(density, lanes[2]);
+    frame.render_widget(density, lanes[4]);
 
     let sentiment_curve =
         build_sentiment_series(snapshot, (inner.width as usize / 2).max(16), snapshot.tick);
