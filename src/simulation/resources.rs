@@ -131,6 +131,8 @@ pub struct ClimateState {
     pub carbon_history: Vec<f32>,
     pub climate_risk_history: Vec<f32>,
     pub biodiversity_history: Vec<f32>,
+    pub sea_level: f32, // 0..1
+    pub ice_line: f32,  // 0..1 from top
 }
 
 /// 과학 승리(달 탐사) 진행도 추적.
@@ -145,6 +147,26 @@ pub struct ScienceVictory {
     pub interstellar_mode: bool,
     pub interstellar_progress: f32,
     pub interstellar_goal: f32,
+}
+
+/// 우주/지질학 타임라인
+#[derive(Debug, Clone, Resource, Serialize, Deserialize)]
+pub struct CosmicTimeline {
+    pub timescale_years_per_tick: f64,
+    pub cosmic_age_years: f64,
+    pub geologic_stage: String,
+    pub extinction_events: u32,
+}
+
+impl Default for CosmicTimeline {
+    fn default() -> Self {
+        Self {
+            timescale_years_per_tick: 1_000_000.0, // 1틱 = 100만년
+            cosmic_age_years: 0.0,
+            geologic_stage: "행성 형성".to_string(),
+            extinction_events: 0,
+        }
+    }
 }
 
 impl Default for ScienceVictory {
@@ -187,6 +209,7 @@ impl Default for DeltaTime {
 pub struct SimulationConfig {
     pub tick_duration: Duration,
     pub grid_radius: i32,
+    pub years_per_tick: f64,
 }
 
 impl Default for SimulationConfig {
@@ -194,6 +217,7 @@ impl Default for SimulationConfig {
         Self {
             tick_duration: Duration::from_secs(1),
             grid_radius: 12,
+            years_per_tick: 1_000_000.0,
         }
     }
 }

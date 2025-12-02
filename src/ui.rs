@@ -100,6 +100,32 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, tick_duration: Dur
             Style::default().fg(Color::White),
         ),
     ]));
+    header_lines.push(Line::from(vec![
+        Span::styled(
+            format!("Cosmic {:.2}억년", snapshot.cosmic_age_years / 100_000_000.0),
+            Style::default().fg(Color::LightBlue),
+        ),
+        Span::raw(" | "),
+        Span::styled(
+            format!("Stage {}", snapshot.geologic_stage),
+            Style::default().fg(Color::Cyan),
+        ),
+        Span::raw(" | "),
+        Span::styled(
+            format!("Extinctions {}", snapshot.extinction_events),
+            Style::default().fg(Color::Magenta),
+        ),
+        Span::raw(" | "),
+        Span::styled(
+            format!("Scale {:.0}년/틱", snapshot.timescale_years_per_tick),
+            Style::default().fg(Color::Gray),
+        ),
+        Span::raw(" | "),
+        Span::styled(
+            format!("Sea {:.0}%", snapshot.overlay.sea_level * 100.0),
+            Style::default().fg(Color::Blue),
+        ),
+    ]));
 
     let header_paragraph = Paragraph::new(header_lines).block(Block::new().borders(Borders::TOP));
     frame.render_widget(header_paragraph, main_layout[0]);
@@ -566,8 +592,11 @@ fn render_science_progress_panel(
     let text = Paragraph::new(vec![
         Line::from("달 탐사 진행도 (1틱 = 1세대)"),
         Line::from(format!(
-            "주도국: {} | {:.1}% / {:.0}%",
-            leader_name, leader_progress, snapshot.science_victory.goal
+            "주도국: {} | {:.1}% / {:.0}% | Cosmic {:.0}년/틱",
+            leader_name,
+            leader_progress,
+            snapshot.science_victory.goal,
+            snapshot.timescale_years_per_tick
         )),
     ]);
     frame.render_widget(text, layout[0]);
@@ -1007,12 +1036,24 @@ impl<'a> Widget for MapWidget<'a> {
                 let ch = atlas[atlas_y].as_bytes()[atlas_x] as char;
                 let is_land = ch == '%' || ch == '#' || ch == '█';
 
-                let base_char = if is_land { "▓" } else { "·" };
+                let mut base_char = if is_land { "▓" } else { "·" };
                 let mut color = if is_land {
                     season_tint
                 } else {
                     Color::Rgb(70, 110, 160)
                 };
+
+                // Sea level overlay
+                let norm_y = y as f32 / area.height as f32;
+                if !is_land && norm_y > self.snapshot.overlay.sea_level {
+                    base_char = "≈";
+                    color = Color::Rgb(50, 90, 140);
+                }
+                // Ice line overlay
+                if norm_y < self.snapshot.overlay.ice_line {
+                    base_char = "░";
+                    color = Color::White;
+                }
 
                 // Dynamic accents
                 if is_land && (tick + x as u64 + y as u64) % 13 == 0 {

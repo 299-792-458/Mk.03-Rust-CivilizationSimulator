@@ -22,11 +22,14 @@ async fn main() -> anyhow::Result<()> {
     let config = SimulationConfig {
         tick_duration: Duration::from_secs(1),
         grid_radius: 24,
+        years_per_tick: 1_000_000.0,
         ..Default::default()
     };
     let initial_tick_duration = config.tick_duration;
+    let initial_years_per_tick = config.years_per_tick;
 
     let (tick_duration_tx, mut tick_duration_rx) = watch::channel(initial_tick_duration);
+    let (timescale_tx, mut timescale_rx) = watch::channel(initial_years_per_tick);
 
     let observer = Arc::new(RwLock::new(ObserverSnapshot::default()));
     let shutdown_notify = Arc::new(Notify::new());
@@ -44,6 +47,14 @@ async fn main() -> anyhow::Result<()> {
                         interval = tokio::time::interval(new_duration);
                     } else {
                         // Channel closed, time to shut down
+                        break;
+                    }
+                },
+                result = timescale_rx.changed() => {
+                    if result.is_ok() {
+                        let new_scale = *timescale_rx.borrow();
+                        simulation.set_timescale(new_scale);
+                    } else {
                         break;
                     }
                 },
@@ -87,8 +98,19 @@ async fn main() -> anyhow::Result<()> {
                         let new_duration = current_duration * 2;
                         tick_duration_tx.send(new_duration).ok();
                     }
+                    KeyCode::Char('<') | KeyCode::Char(',') => {
+                        let current = *timescale_tx.borrow();
+                        let new_scale = (current / 2.0).max(1_000.0);
+                        timescale_tx.send(new_scale).ok();
+                    }
+                    KeyCode::Char('>') | KeyCode::Char('.') => {
+                        let current = *timescale_tx.borrow();
+                        let new_scale = (current * 2.0).min(50_000_000_000.0);
+                        timescale_tx.send(new_scale).ok();
+                    }
                     KeyCode::Char('r') => {
                         tick_duration_tx.send(initial_tick_duration).ok();
+                        timescale_tx.send(initial_years_per_tick).ok();
                     }
                     _ => {}
                 },

@@ -27,6 +27,7 @@ pub use systems::*;
 pub use technology::*;
 pub use world::*;
 pub use blocs::*;
+pub use resources::CosmicTimeline;
 
 pub struct SimulationWorld {
     world: World,
@@ -45,7 +46,7 @@ impl SimulationWorld {
         observer: Arc<RwLock<ObserverSnapshot>>,
     ) -> Self {
         let mut world = World::default();
-        world.insert_resource(config);
+        world.insert_resource(config.clone());
         world.insert_resource(AllNationMetrics::default());
         world.insert_resource(AllNationCivState::default());
         world.insert_resource(NuclearBlasts::default());
@@ -57,6 +58,9 @@ impl SimulationWorld {
         world.insert_resource(WorldMetadata::default());
         world.insert_resource(WorldEventLog::default());
         world.insert_resource(ScienceVictory::default());
+        let mut cosmic = CosmicTimeline::default();
+        cosmic.timescale_years_per_tick = config.years_per_tick;
+        world.insert_resource(cosmic);
 
         seed_entities(&mut world);
         seed_grid(&mut world);
@@ -64,6 +68,7 @@ impl SimulationWorld {
         let mut schedule = Schedule::default();
         schedule.add_systems(
             (
+                cosmic_time_system,
                 ai_state_transition_system,
                 combat_cleanup_system, // Clean up combat from previous tick
                 economy_system,
@@ -86,6 +91,7 @@ impl SimulationWorld {
             )
                 .chain(),
         );
+        schedule.add_systems(extinction_system);
 
         Self {
             world,
@@ -104,6 +110,12 @@ impl SimulationWorld {
         self.refresh_observer_snapshot();
     }
 
+    pub fn set_timescale(&mut self, years_per_tick: f64) {
+        if let Some(mut cosmic) = self.world.get_resource_mut::<CosmicTimeline>() {
+            cosmic.timescale_years_per_tick = years_per_tick;
+        }
+    }
+
     fn refresh_observer_snapshot(&mut self) {
         let tick = self.world.resource::<WorldTime>().tick;
         let world_meta = self.world.resource::<WorldMetadata>().clone();
@@ -113,6 +125,7 @@ impl SimulationWorld {
         let war_fatigue = self.world.resource::<WarFatigue>().clone();
         let richness = self.world.resource::<WorldRichness>().clone();
         let climate = self.world.resource::<ClimateState>().clone();
+        let cosmic = self.world.resource::<CosmicTimeline>().clone();
         let science_victory_snapshot = {
             let tracker = self.world.resource::<ScienceVictory>();
             let mut ordered: Vec<_> = tracker.progress.iter().collect();
@@ -205,6 +218,10 @@ impl SimulationWorld {
                 tick,
                 epoch,
                 season,
+                cosmic.cosmic_age_years,
+                cosmic.timescale_years_per_tick,
+                cosmic.geologic_stage,
+                cosmic.extinction_events,
                 season_effect,
                 &metrics,
                 civ_state,
@@ -218,6 +235,8 @@ impl SimulationWorld {
                     carbon_history: climate.carbon_history.clone(),
                     climate_risk_history: climate.climate_risk_history.clone(),
                     biodiversity_history: climate.biodiversity_history.clone(),
+                    sea_level: climate.sea_level,
+                    ice_line: climate.ice_line,
                 },
                 science_victory_snapshot,
                 entities,

@@ -11,30 +11,46 @@ pub fn climate_system(
     richness: Res<WorldRichness>,
     blasts: Res<NuclearBlasts>,
     fatigue: Res<WarFatigue>,
+    cosmic: Res<crate::simulation::CosmicTimeline>,
     time: Res<WorldTime>,
     mut log: ResMut<WorldEventLog>,
 ) {
     // Baseline slow increase
     climate.carbon_ppm += 0.05;
 
+    // Geologic stage scaling
+    let stage_factor = match cosmic.geologic_stage.as_str() {
+        "원시 지각" => 0.5,
+        "태고 해양" => 0.7,
+        "산소 폭발" => 1.1,
+        "캄브리아/대륙 분화" => 1.2,
+        "대멸종 순환" => 1.4,
+        _ => 1.6,
+    };
+
     // Industry proxy: richness acts as prosperity => higher emissions
-    climate.carbon_ppm += richness.richness * 0.8;
+    climate.carbon_ppm += richness.richness * 0.8 * stage_factor;
 
     // War proxy: war fatigue spikes emissions and risk
-    climate.carbon_ppm += fatigue.intensity * 0.02;
+    climate.carbon_ppm += fatigue.intensity * 0.02 * stage_factor;
 
     // Nuclear fallout amplifies climate risk
     let blast_total: u32 = blasts.0.values().map(|v| *v as u32).sum();
     climate.carbon_ppm += blast_total as f32 * 0.03;
 
     // Biodiversity erosion from carbon/risk
-    climate.biodiversity -= (climate.carbon_ppm / 1000.0) * 0.2;
+    climate.biodiversity -= (climate.carbon_ppm / 1000.0) * 0.2 * stage_factor;
     climate.biodiversity = climate.biodiversity.max(0.0);
 
     // Climate risk is a composite
     climate.climate_risk =
         (climate.carbon_ppm * 0.6 + fatigue.intensity * 0.4 + blast_total as f32 * 0.5) * 0.01;
     climate.climate_risk = climate.climate_risk.clamp(0.0, 100.0);
+    // Sea level and ice line (normalized 0..1)
+    climate.sea_level = (climate.climate_risk * 0.01 * 0.6 + richness.richness * 0.4)
+        .min(1.0)
+        .max(0.0);
+    climate.ice_line = (1.0 - (climate.carbon_ppm / 800.0).min(1.0)) as f32;
 
     let carbon_ppm = climate.carbon_ppm;
     let risk = climate.climate_risk;
@@ -64,7 +80,12 @@ pub fn climate_system(
 
 fn push_history(history: &mut Vec<f32>, value: f32) {
     history.push(value);
-    if history.len() > 256 {
-        history.remove(0);
+    if history.len() > 512 {
+        let mut i = 0;
+        history.retain(|_| {
+            let keep = i % 2 == 0;
+            i += 1;
+            keep
+        });
     }
 }

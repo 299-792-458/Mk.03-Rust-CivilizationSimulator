@@ -52,6 +52,8 @@ pub struct WorldOverlaySnapshot {
     pub carbon_history: Vec<f32>,
     pub climate_risk_history: Vec<f32>,
     pub biodiversity_history: Vec<f32>,
+    pub sea_level: f32,
+    pub ice_line: f32,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
@@ -76,6 +78,10 @@ pub struct ObserverSnapshot {
     pub tick: u64,
     pub epoch: String,
     pub season: String,
+    pub cosmic_age_years: f64,
+    pub timescale_years_per_tick: f64,
+    pub geologic_stage: String,
+    pub extinction_events: u32,
     pub season_effect: SeasonEffectSnapshot,
     pub all_metrics: AllNationMetrics,
     pub civ_state: AllNationCivState,
@@ -94,6 +100,10 @@ impl ObserverSnapshot {
             tick: 0,
             epoch: "새벽".to_string(),
             season: "꽃피움 계절".to_string(),
+            cosmic_age_years: 0.0,
+            timescale_years_per_tick: 1_000_000.0,
+            geologic_stage: "행성 형성".to_string(),
+            extinction_events: 0,
             season_effect: SeasonEffectSnapshot {
                 label: "온화한 바람".to_string(),
                 temperature: 0.0,
@@ -118,6 +128,10 @@ impl ObserverSnapshot {
         tick: u64,
         epoch: String,
         season: String,
+        cosmic_age_years: f64,
+        timescale_years_per_tick: f64,
+        geologic_stage: String,
+        extinction_events: u32,
         season_effect: SeasonEffectSnapshot,
         metrics: &AllNationMetrics,
         civ_state: AllNationCivState,
@@ -132,6 +146,10 @@ impl ObserverSnapshot {
         self.tick = tick;
         self.epoch = epoch;
         self.season = season;
+        self.cosmic_age_years = cosmic_age_years;
+        self.timescale_years_per_tick = timescale_years_per_tick;
+        self.geologic_stage = geologic_stage;
+        self.extinction_events = extinction_events;
         self.season_effect = season_effect;
         self.all_metrics = metrics.clone();
         self.civ_state = civ_state;

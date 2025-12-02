@@ -75,7 +75,12 @@ pub fn climate_impact_system(
 
 fn push_history(history: &mut Vec<f32>, value: f32) {
     history.push(value);
-    if history.len() > 256 {
-        history.remove(0);
+    if history.len() > 512 {
+        let mut i = 0;
+        history.retain(|_| {
+            let keep = i % 2 == 0;
+            i += 1;
+            keep
+        });
     }
 }

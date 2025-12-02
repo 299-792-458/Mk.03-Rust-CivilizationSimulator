@@ -15,6 +15,7 @@ pub mod warfare;
 pub mod warfatigue;
 pub mod demography;
 pub mod blocs;
+pub mod cosmic;
 
 pub use ai::*;
 pub use civilization::*;
@@ -32,3 +33,4 @@ pub use warfare::*;
 pub use warfatigue::*;
 pub use demography::*;
 pub use blocs::*;
+pub use cosmic::*;
