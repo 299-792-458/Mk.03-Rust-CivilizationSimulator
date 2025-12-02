@@ -61,6 +61,7 @@ impl SimulationWorld {
         let mut cosmic = CosmicTimeline::default();
         cosmic.timescale_years_per_tick = config.years_per_tick;
         world.insert_resource(cosmic);
+        world.insert_resource(CivilizationalLedger::default());
 
         seed_entities(&mut world);
         seed_grid(&mut world);
@@ -126,8 +127,39 @@ impl SimulationWorld {
         let richness = self.world.resource::<WorldRichness>().clone();
         let climate = self.world.resource::<ClimateState>().clone();
         let cosmic = self.world.resource::<CosmicTimeline>().clone();
+        let mut ledger = self.world.resource_mut::<CivilizationalLedger>();
+        let (total_pop, total_gdp) = {
+            let mut pop = 0u64;
+            let mut gdp = 0f32;
+            for (_, m) in metrics.0.iter() {
+                if !m.is_destroyed {
+                    pop = pop.saturating_add(m.population);
+                    gdp += m.economy;
+                }
+            }
+            (pop, gdp)
+        };
+        ledger.population_history.push(total_pop);
+        ledger.gdp_history.push(total_gdp);
+        if ledger.population_history.len() > 512 {
+            let mut i = 0;
+            ledger.population_history.retain(|_| {
+                let keep = i % 2 == 0;
+                i += 1;
+                keep
+            });
+        }
+        if ledger.gdp_history.len() > 512 {
+            let mut i = 0;
+            ledger.gdp_history.retain(|_| {
+                let keep = i % 2 == 0;
+                i += 1;
+                keep
+            });
+        }
         let science_victory_snapshot = {
             let tracker = self.world.resource::<ScienceVictory>();
+            let ledger = self.world.resource::<CivilizationalLedger>();
             let mut ordered: Vec<_> = tracker.progress.iter().collect();
             ordered.sort_by(|a, b| {
                 b.1.partial_cmp(a.1)
@@ -155,6 +187,10 @@ impl SimulationWorld {
                 carbon_ppm: climate.carbon_ppm,
                 climate_risk: climate.climate_risk,
                 biodiversity: climate.biodiversity,
+                total_population: ledger.population_history.last().cloned().unwrap_or(0),
+                total_economy: ledger.gdp_history.last().cloned().unwrap_or(0.0),
+                population_history: ledger.population_history.clone(),
+                economy_history: ledger.gdp_history.clone(),
             }
         };
 

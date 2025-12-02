@@ -76,6 +76,10 @@ pub struct ScienceVictorySnapshot {
     pub mars_goal: f32,
     pub jovian_progress: f32,
     pub jovian_goal: f32,
+    pub total_population: u64,
+    pub total_economy: f32,
+    pub population_history: Vec<u64>,
+    pub economy_history: Vec<f32>,
 }
 
 #[derive(Debug, Clone, Serialize)]

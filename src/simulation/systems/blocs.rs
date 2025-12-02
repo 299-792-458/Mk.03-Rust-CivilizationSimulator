@@ -8,9 +8,15 @@ use crate::simulation::{AllNationMetrics, BlocKind, WorldBlocs, WorldTime};
 pub fn bloc_system(
     mut blocs: ResMut<WorldBlocs>,
     metrics: Res<AllNationMetrics>,
+    fatigue: Res<crate::simulation::WarFatigue>,
+    climate: Res<crate::simulation::ClimateState>,
     time: Res<WorldTime>,
 ) {
     let mut rng = SmallRng::seed_from_u64(time.tick.wrapping_mul(313));
+    let war_tension = (fatigue.intensity / 100.0).clamp(0.0, 1.0);
+    let climate_stress = (climate.climate_risk / 100.0).clamp(0.0, 1.0);
+    let coop_bias = 0.5 + (1.0 - war_tension) * 0.2 + climate_stress * 0.1;
+    let sanction_bias = 0.3 + war_tension * 0.4 + climate_stress * 0.1;
 
     // Build desired blocs without holding the map borrow
     let research_template = crate::simulation::Bloc {
@@ -20,7 +26,7 @@ pub fn bloc_system(
             .0
             .keys()
             .cloned()
-            .filter(|_| rng.gen_bool(0.5))
+            .filter(|_| rng.gen_bool(coop_bias as f64))
             .collect(),
         strength: 1.0,
     };
@@ -31,7 +37,7 @@ pub fn bloc_system(
             .0
             .keys()
             .cloned()
-            .filter(|_| rng.gen_bool(0.3))
+            .filter(|_| rng.gen_bool(sanction_bias as f64))
             .collect(),
         strength: 1.0,
     };

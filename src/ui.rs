@@ -642,6 +642,7 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
             Constraint::Length(2),
             Constraint::Length(2),
             Constraint::Length(2),
+            Constraint::Length(3),
         ])
         .split(inner);
 
@@ -755,6 +756,30 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         .max(sentiment_curve.iter().cloned().max().unwrap_or(1))
         .style(Style::default().fg(Color::Magenta));
     frame.render_widget(sentiment, lanes[5]);
+
+    let pop_series: Vec<u64> = snapshot
+        .science_victory
+        .population_history
+        .iter()
+        .rev()
+        .take(120)
+        .cloned()
+        .collect::<Vec<u64>>()
+        .into_iter()
+        .rev()
+        .collect();
+    let mut pop_series = pop_series;
+    ensure_nonempty(&mut pop_series);
+    let pop = Sparkline::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Civilization Pop (mega)"),
+        )
+        .data(&pop_series)
+        .max(pop_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::White));
+    frame.render_widget(pop, lanes[6]);
 }
 
 fn render_event_leaderboard(

@@ -192,6 +192,12 @@ pub struct CosmicTimeline {
     pub extinction_events: u32,
 }
 
+#[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct CivilizationalLedger {
+    pub population_history: Vec<u64>,
+    pub gdp_history: Vec<f32>,
+}
+
 impl Default for CosmicTimeline {
     fn default() -> Self {
         Self {
