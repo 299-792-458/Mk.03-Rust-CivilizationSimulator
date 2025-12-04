@@ -1,7 +1,7 @@
 use bevy_ecs::prelude::*;
 
 use crate::simulation::{
-    events::WorldEventKind, AllNationMetrics, NuclearBlasts, WarFatigue, WorldEventLog, WorldTime,
+    AllNationMetrics, NuclearBlasts, WarFatigue, WorldEventLog, WorldTime, events::WorldEventKind,
 };
 
 /// Tracks war fatigue and fallout intensity, decaying over time and spiking on wars/nukes.
@@ -28,13 +28,19 @@ pub fn war_fatigue_system(
     // Event-driven spikes
     for evt in events.snapshot().iter().rev().take(8) {
         match &evt.kind {
-            WorldEventKind::Warfare { nuclear, casualties, .. } => {
+            WorldEventKind::Warfare {
+                nuclear,
+                casualties,
+                ..
+            } => {
                 fatigue.intensity += (*casualties as f32 / 100_000.0).min(12.0);
                 if *nuclear {
                     fatigue.intensity += 8.0;
                 }
             }
-            WorldEventKind::MacroShock { projected_impact, .. } => {
+            WorldEventKind::MacroShock {
+                projected_impact, ..
+            } => {
                 let magnitude = projected_impact
                     .chars()
                     .filter(|c| c.is_ascii_digit())

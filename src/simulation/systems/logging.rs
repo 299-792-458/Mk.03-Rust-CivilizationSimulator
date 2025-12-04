@@ -219,8 +219,7 @@ fn format_event_line(event: &WorldEvent) -> String {
         }
         crate::simulation::WorldEventKind::InterstellarProgress { leader, progress } => {
             let leader_badge = badge(leader.name(), leader.logging_color());
-            let progress_badge =
-                badge(&format!("{:.1}% / 100%", progress.min(100.0)), Color::Cyan);
+            let progress_badge = badge(&format!("{:.1}% / 100%", progress.min(100.0)), Color::Cyan);
             format!(
                 "{} {} {} {} {} {} 성간 이주 진행",
                 category_badge,
@@ -233,8 +232,10 @@ fn format_event_line(event: &WorldEvent) -> String {
         }
         crate::simulation::WorldEventKind::InterstellarVictory { winner, progress } => {
             let winner_badge = badge(winner.name(), winner.logging_color());
-            let progress_badge =
-                badge(&format!("{:.1}% / 100%", progress.min(100.0)), Color::BrightGreen);
+            let progress_badge = badge(
+                &format!("{:.1}% / 100%", progress.min(100.0)),
+                Color::BrightGreen,
+            );
             format!(
                 "{} {} {} {} {} {} 성간 정착 완료!",
                 category_badge,

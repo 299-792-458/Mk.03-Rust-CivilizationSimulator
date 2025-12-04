@@ -4,6 +4,7 @@ use bevy_ecs::prelude::*;
 use bevy_ecs::schedule::Schedule;
 use std::collections::{HashMap, HashSet};
 
+pub mod blocs;
 pub mod components;
 pub mod events;
 pub mod grid;
@@ -14,20 +15,19 @@ pub mod resources;
 pub mod systems;
 pub mod technology;
 pub mod world;
-pub mod blocs;
 
+pub use blocs::*;
 pub use components::*;
 pub use events::*;
 pub use grid::*;
 pub use localization::*;
 pub use nation::*;
 pub use observer::*;
+pub use resources::CosmicTimeline;
 pub use resources::*;
 pub use systems::*;
 pub use technology::*;
 pub use world::*;
-pub use blocs::*;
-pub use resources::CosmicTimeline;
 
 pub struct SimulationWorld {
     world: World,
@@ -161,11 +161,10 @@ impl SimulationWorld {
             let tracker = self.world.resource::<ScienceVictory>();
             let ledger = self.world.resource::<CivilizationalLedger>();
             let mut ordered: Vec<_> = tracker.progress.iter().collect();
-            ordered.sort_by(|a, b| {
-                b.1.partial_cmp(a.1)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
-            let leader = ordered.get(0).map(|(nation, progress)| (**nation, **progress));
+            ordered.sort_by(|a, b| b.1.partial_cmp(a.1).unwrap_or(std::cmp::Ordering::Equal));
+            let leader = ordered
+                .get(0)
+                .map(|(nation, progress)| (**nation, **progress));
             let runner_up = ordered.get(1).map(|(_, progress)| **progress);
 
             observer::ScienceVictorySnapshot {

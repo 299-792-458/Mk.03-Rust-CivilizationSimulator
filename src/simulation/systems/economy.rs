@@ -5,7 +5,7 @@ use rand::rngs::SmallRng;
 use rand::{Rng, SeedableRng};
 
 use crate::simulation::{
-    AllNationMetrics, Behavior, BehaviorState, BlocKind, WorldBlocs, Identity, Inventory, Position,
+    AllNationMetrics, Behavior, BehaviorState, BlocKind, Identity, Inventory, Position, WorldBlocs,
     WorldMetadata, WorldTime,
 };
 

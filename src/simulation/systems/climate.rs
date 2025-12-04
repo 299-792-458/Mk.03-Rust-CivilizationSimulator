@@ -1,8 +1,8 @@
 use bevy_ecs::prelude::*;
 
 use crate::simulation::{
-    ClimateState, NuclearBlasts, WarFatigue, WorldEvent, WorldEventKind, WorldEventLog, WorldTime,
-    WorldRichness,
+    ClimateState, NuclearBlasts, WarFatigue, WorldEvent, WorldEventKind, WorldEventLog,
+    WorldRichness, WorldTime,
 };
 
 /// Updates global climate state based on war/industry signals.

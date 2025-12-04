@@ -41,7 +41,8 @@ pub fn science_victory_system(
                 };
 
                 // Collaboration: diplomacy + culture aid science momentum
-                let diplomacy_bonus = (metrics.diplomacy * 0.006 + metrics.culture * 0.004).min(4.0);
+                let diplomacy_bonus =
+                    (metrics.diplomacy * 0.006 + metrics.culture * 0.004).min(4.0);
 
                 // War fatigue slows progress (modeled via military attrition and casualties elsewhere)
                 let conflict_drag = (100.0 - metrics.military).max(0.0) * 0.0009;
@@ -121,11 +122,7 @@ pub fn science_victory_system(
                 tracker.winner = Some(nation);
                 tracker.space_stage = crate::simulation::SpaceStage::Mars;
                 event_log.push(WorldEvent::science_victory(
-                    time.tick,
-                    epoch,
-                    season,
-                    nation,
-                    value,
+                    time.tick, epoch, season, nation, value,
                 ));
             }
         }

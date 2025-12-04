@@ -1,7 +1,7 @@
 use bevy_ecs::prelude::*;
 
 use crate::simulation::{
-    AllNationCivState, AllNationMetrics, ClimateState, WorldMetadata, WorldTime, WorldRichness,
+    AllNationCivState, AllNationMetrics, ClimateState, WorldMetadata, WorldRichness, WorldTime,
 };
 
 /// Applies soft seasonal pulses to civ happiness/production and nation surface stats.
@@ -36,7 +36,10 @@ fn clamp(value: f32, min: f32, max: f32) -> f32 {
 }
 
 /// Simple richness overlay aggregator.
-pub fn richness_overlay_system(mut richness: ResMut<WorldRichness>, all_metrics: Res<AllNationMetrics>) {
+pub fn richness_overlay_system(
+    mut richness: ResMut<WorldRichness>,
+    all_metrics: Res<AllNationMetrics>,
+) {
     let mut total = 0.0;
     let mut count = 0.0;
     for (_nation, metrics) in all_metrics.0.iter() {
@@ -45,16 +48,17 @@ pub fn richness_overlay_system(mut richness: ResMut<WorldRichness>, all_metrics:
             count += 1.0;
         }
     }
-    richness.richness = if count > 0.0 { (total / count) / 100.0 } else { 0.0 };
+    richness.richness = if count > 0.0 {
+        (total / count) / 100.0
+    } else {
+        0.0
+    };
     let value = richness.richness;
     push_history(&mut richness.history, value * 100.0);
 }
 
 /// Applies climate penalties/bonuses to nation metrics based on global climate state.
-pub fn climate_impact_system(
-    climate: Res<ClimateState>,
-    mut metrics: ResMut<AllNationMetrics>,
-) {
+pub fn climate_impact_system(climate: Res<ClimateState>, mut metrics: ResMut<AllNationMetrics>) {
     let risk = climate.climate_risk;
     let biodiversity = climate.biodiversity;
     for (_, m) in metrics.0.iter_mut() {

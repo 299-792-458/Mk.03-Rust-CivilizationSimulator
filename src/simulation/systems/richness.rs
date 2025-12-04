@@ -1,6 +1,6 @@
 use bevy_ecs::prelude::*;
 
-use crate::simulation::{grid::HexGrid, Hex, WorldRichness};
+use crate::simulation::{Hex, WorldRichness, grid::HexGrid};
 
 /// Aggregates a simple "resource richness" overlay based on hex ownership diversity.
 #[allow(dead_code)]

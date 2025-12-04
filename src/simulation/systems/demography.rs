@@ -28,7 +28,10 @@ pub fn demography_system(
             .adult
             .saturating_add(aging_youth)
             .saturating_sub(aging_adult);
-        m.elder = m.elder.saturating_add(aging_adult).saturating_sub(elder_mortality);
+        m.elder = m
+            .elder
+            .saturating_add(aging_adult)
+            .saturating_sub(elder_mortality);
 
         m.population = m.youth + m.adult + m.elder;
 
