@@ -44,9 +44,9 @@ pub enum MapOverlay {
 impl MapOverlay {
     pub fn label(&self) -> &'static str {
         match self {
-            MapOverlay::Ownership => "영토/선두",
-            MapOverlay::Climate => "기후/해수",
-            MapOverlay::Conflict => "전선/피로",
+            MapOverlay::Ownership => "Territory/Leader",
+            MapOverlay::Climate => "Climate/Sea",
+            MapOverlay::Conflict => "Conflict/Fatigue",
         }
     }
 
@@ -79,11 +79,11 @@ pub enum LogFilter {
 impl LogFilter {
     pub fn label(&self) -> &'static str {
         match self {
-            LogFilter::All => "전체",
-            LogFilter::War => "전쟁",
-            LogFilter::TradeSocial => "무역/사회",
-            LogFilter::ScienceSpace => "과학/우주",
-            LogFilter::Diplomacy => "외교",
+            LogFilter::All => "All",
+            LogFilter::War => "War",
+            LogFilter::TradeSocial => "Trade/Social",
+            LogFilter::ScienceSpace => "Science/Space",
+            LogFilter::Diplomacy => "Diplomacy",
         }
     }
 
@@ -157,7 +157,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
             ),
         ]),
         Line::from(vec![
-            Span::raw("대기 흐름: "),
+            Span::raw("Atmosphere: "),
             Span::styled(
                 &snapshot.season_effect.label,
                 Style::default().fg(Color::Yellow).bold(),
@@ -165,7 +165,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
             Span::raw("  "),
             Span::styled(
                 format!(
-                    "온도 {:+.1}  사기 {:+.1}%  수확 {:+.1}%  위험 {:+.1}%",
+                    "Temp {:+.1}  Morale {:+.1}%  Yield {:+.1}%  Risk {:+.1}%",
                     snapshot.season_effect.temperature * 10.0,
                     snapshot.season_effect.morale_shift,
                     snapshot.season_effect.yield_shift,
@@ -177,12 +177,12 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     ];
     if snapshot.science_victory.finished {
         header_lines.push(Line::from(Span::styled(
-            "우주 문명 달성 — 시뮬레이션 안정화",
+            "Spacefaring civilization achieved — simulation stabilizing",
             Style::default().fg(Color::LightGreen).bold(),
         )));
     } else if snapshot.science_victory.interstellar_mode {
         header_lines.push(Line::from(Span::styled(
-            "성간 확장 단계 진행 중",
+            "Interstellar expansion underway",
             Style::default().fg(Color::Cyan).bold(),
         )));
     }
@@ -197,7 +197,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     header_lines.push(Line::from(vec![
         Span::styled(
             format!(
-                "Cosmic {:.2}억년",
+                "Cosmic {:.2}e8 yrs",
                 snapshot.cosmic_age_years / 100_000_000.0
             ),
             Style::default().fg(Color::LightBlue),
@@ -214,7 +214,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         ),
         Span::raw(" | "),
         Span::styled(
-            format!("Scale {:.0}년/틱", snapshot.timescale_years_per_tick),
+            format!("Scale {:.0}y/tick", snapshot.timescale_years_per_tick),
             Style::default().fg(Color::Gray),
         ),
         Span::raw(" | "),
@@ -225,7 +225,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         Span::raw(" | "),
         Span::styled(
             format!(
-                "동맹 {} · 제재 {}",
+                "Alliances {} · Sanctions {}",
                 snapshot.diplomacy.alliances.len(),
                 snapshot.diplomacy.sanctions.len()
             ),
@@ -392,8 +392,8 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
                     casualties,
                 } => {
                     let casualty_str = casualties
-                        .map(|c| format!("피해 {}명", format_number_commas(c)))
-                        .unwrap_or_else(|| "피해 보고 없음".to_string());
+                        .map(|c| format!("Casualties {}", format_number_commas(c)))
+                        .unwrap_or_else(|| "Casualties None".to_string());
                     (
                         stressor.clone(),
                         catalyst.clone(),
@@ -410,10 +410,10 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
                     winner.name().to_string(),
                     format!("vs {}", loser.name()),
                     format!(
-                        "+{:.2} territory | 사상자 {}명{}",
+                        "+{:.2} territory | Casualties {}{}",
                         territory_change,
                         format_number_commas(*casualties),
-                        if *nuclear { " | 핵" } else { "" }
+                        if *nuclear { " | Nuke" } else { "" }
                     ),
                 ),
                 WorldEventKind::EraShift {
@@ -427,23 +427,23 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
                 ),
                 WorldEventKind::ScienceProgress { nation, progress } => (
                     nation.name().to_string(),
-                    "달 탐사 단계".to_string(),
-                    format!("{progress:.1}% 달성"),
+                    "Moon Exploration".to_string(),
+                    format!("{progress:.1}% Achieved"),
                 ),
                 WorldEventKind::ScienceVictory { winner, progress } => (
                     winner.name().to_string(),
-                    "과학 승리".to_string(),
-                    format!("{progress:.1}% 완주"),
+                    "Science Victory".to_string(),
+                    format!("{progress:.1}% Complete"),
                 ),
                 WorldEventKind::InterstellarProgress { leader, progress } => (
                     leader.name().to_string(),
-                    "성간 이주 단계".to_string(),
-                    format!("{progress:.1}% 달성"),
+                    "Interstellar Migration".to_string(),
+                    format!("{progress:.1}% Achieved"),
                 ),
                 WorldEventKind::InterstellarVictory { winner, progress } => (
                     winner.name().to_string(),
-                    "우주 문명 승리".to_string(),
-                    format!("{progress:.1}% 완주"),
+                    "Interstellar Victory".to_string(),
+                    format!("{progress:.1}% Complete"),
                 ),
             };
 
@@ -478,7 +478,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     .header(header)
     .block(
         Block::default()
-            .title("Event Log — 전쟁 피로/자원 풍부도는 좌측 패널 확인")
+            .title("Event Log — Check Left Panel for War Fatigue/Resource Richness")
             .borders(Borders::ALL),
     );
 
@@ -504,7 +504,7 @@ fn render_control_deck(
     control: &ControlState,
 ) {
     let block = Block::default()
-        .title("Control Deck — 문명 진화 오케스트레이션")
+        .title("Control Deck — Civilization orchestration")
         .borders(Borders::ALL);
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -544,7 +544,7 @@ fn render_control_deck(
             ),
             Span::raw(" · "),
             Span::styled(
-                format!("{:.0} 년/틱", control.years_per_tick),
+                format!("{:.0} y/tick", control.years_per_tick),
                 Style::default().fg(Color::Cyan),
             ),
             Span::raw(" · Preset "),
@@ -560,7 +560,7 @@ fn render_control_deck(
             Span::raw(" · Climate "),
             Span::styled(
                 format!(
-                    "{:.0}ppm | 위험 {:.1}% | 생물다양성 {:.1}",
+                    "{:.0}ppm | Risk {:.1}% | Biodiversity {:.1}",
                     snapshot.science_victory.carbon_ppm,
                     snapshot.science_victory.climate_risk,
                     snapshot.science_victory.biodiversity
@@ -570,7 +570,7 @@ fn render_control_deck(
         ]),
         Line::from(vec![
             Span::styled("Log ", Style::default().fg(Color::Cyan)),
-            Span::raw(format!("필터 {} ", control.log_filter.label())),
+            Span::raw(format!("Filter {} ", control.log_filter.label())),
             Span::styled(
                 if control.log_pin_selected {
                     "PIN ON"
@@ -583,55 +583,55 @@ fn render_control_deck(
                     Color::Gray
                 }),
             ),
-            Span::raw(" · 핀 "),
+            Span::raw(" · Pin "),
             Span::styled(
                 control
                     .pinned_nation
                     .map(|n| n.name().to_string())
-                    .unwrap_or_else(|| "없음".to_string()),
+                    .unwrap_or_else(|| "None".to_string()),
                 Style::default().fg(Color::Magenta),
             ),
-            Span::raw(" · 포커스 "),
+            Span::raw(" · Focus "),
             Span::styled(
                 control
                     .selected_owner
                     .map(|n| n.name().to_string())
-                    .unwrap_or_else(|| "없음".to_string()),
+                    .unwrap_or_else(|| "None".to_string()),
                 Style::default().fg(Color::LightGreen),
             ),
         ]),
         Line::from(format!(
-            "Stage {} | 멸종 {} | Hex {} | Entities {}",
+            "Stage {} | Extinction {} | Hex {} | Entities {}",
             snapshot.geologic_stage,
             snapshot.extinction_events,
             snapshot.grid.hexes.len(),
             snapshot.entities.len()
         )),
         Line::from(vec![
-            Span::styled("핫키:", Style::default().fg(Color::Yellow)),
-            Span::raw(" Space/P 정지·재생  "),
+            Span::styled("Hotkeys:", Style::default().fg(Color::Yellow)),
+            Span::raw(" Space/P PAUSED/RESUME  "),
             Span::styled("+-", Style::default().fg(Color::Green)),
-            Span::raw(" 틱 속도  "),
+            Span::raw(" Tick speed  "),
             Span::styled("< >", Style::default().fg(Color::Cyan)),
-            Span::raw(" 시간축  "),
+            Span::raw(" Timescale  "),
             Span::styled("1~4", Style::default().fg(Color::LightMagenta)),
-            Span::raw(" 프리셋  "),
+            Span::raw(" Preset  "),
             Span::styled("R", Style::default().fg(Color::LightYellow)),
-            Span::raw(" 리셋  "),
+            Span::raw(" Reset  "),
             Span::styled("Q", Style::default().fg(Color::Red)),
-            Span::raw(" 종료  "),
+            Span::raw(" Quit  "),
             Span::styled("[ ]", Style::default().fg(Color::LightCyan)),
-            Span::raw(" 지도 모드  "),
+            Span::raw(" Map Preset  "),
             Span::styled("F", Style::default().fg(Color::Cyan)),
-            Span::raw(" 로그필터  "),
+            Span::raw(" Log filter  "),
             Span::styled("G", Style::default().fg(Color::Magenta)),
-            Span::raw(" 핀 on/off  "),
+            Span::raw(" Pin on/off  "),
             Span::styled("C", Style::default().fg(Color::LightCyan)),
-            Span::raw(" 선택 핀  "),
+            Span::raw(" Pin selection  "),
             Span::styled("V", Style::default().fg(Color::LightGreen)),
-            Span::raw(" Focus 토글"),
+            Span::raw(" Focus toggle"),
         ]),
-        Line::from("마우스: 좌측 상단 [-][+][R] 터미널 버튼도 사용 가능"),
+        Line::from("Mouse: top-left [-][+][R] buttons usable"),
     ];
     let status_paragraph = Paragraph::new(status_lines).wrap(Wrap { trim: true });
     frame.render_widget(status_paragraph, columns[0]);
@@ -665,7 +665,7 @@ fn render_control_deck(
         ],
     )
     .header(
-        Row::new(vec!["모드", "역할", "틱", "연/틱"])
+        Row::new(vec!["Preset", "Role", "Tick", "y/tick"])
             .style(Style::default().fg(Color::White).bold()),
     )
     .block(
@@ -687,52 +687,52 @@ fn render_control_deck(
 
     let legend_lines = vec![
         Line::from(vec![
-            Span::styled("지도", Style::default().fg(Color::White).bold()),
-            Span::raw(" ◆ 선두국 | █ 영토 | ✸ 전선 | ◎ 핵 "),
+            Span::styled("Map", Style::default().fg(Color::White).bold()),
+            Span::raw(" ◆ Leader | █ Territory | ✸ Front | ◎ Nuke "),
         ]),
         Line::from(vec![
-            Span::raw("≈ 해수 | ░ 빙선 | 모드 "),
+            Span::raw("≈ Sea | ░ Ice | Mode "),
             Span::styled(
                 control.map_overlay.label(),
                 Style::default().fg(Color::Cyan).bold(),
             ),
-            Span::raw("  [ [ ] ] 전환"),
+            Span::raw("  [ [ ] ] toggle"),
         ]),
         Line::from(format!(
-            "해수면 {:.0}% | 빙선 {:.0}% | 전선 {}",
+            "Sea {:.0}% | Ice {:.0}% | Fronts {}",
             snapshot.overlay.sea_level * 100.0,
             snapshot.overlay.ice_line * 100.0,
             snapshot.combat_hexes.len()
         )),
         Line::from(match control.selected_owner {
             Some(nation) => format!(
-                "선택 헥스: {} | 전선 {} | 핵 {}",
+                "Selected hex: {} | Front {} | Nuke {}",
                 nation.name(),
                 if control
                     .selected_hex
                     .map(|c| snapshot.combat_hexes.contains(&c))
                     .unwrap_or(false)
                 {
-                    "예"
+                    "Yes"
                 } else {
-                    "없음"
+                    "None"
                 },
                 if control
                     .selected_hex
                     .map(|c| snapshot.nuclear_hexes.contains(&c))
                     .unwrap_or(false)
                 {
-                    "예"
+                    "Yes"
                 } else {
-                    "없음"
+                    "None"
                 }
             ),
-            None => "선택 헥스 없음".to_string(),
+            None => "No hex selected".to_string(),
         }),
         Line::from(vec![
-            Span::styled("외교 ", Style::default().fg(Color::Magenta).bold()),
+            Span::styled("Diplomacy ", Style::default().fg(Color::Magenta).bold()),
             Span::raw(format!(
-                "동맹 {} · 제재 {} · Trust {:.0}",
+                "Alliances {} · Sanctions {} · Trust {:.0}",
                 snapshot.diplomacy.alliances.len(),
                 snapshot.diplomacy.sanctions.len(),
                 snapshot
@@ -744,7 +744,7 @@ fn render_control_deck(
                     / snapshot.diplomacy.trust.len().max(1) as f32
             )),
             Span::raw(if control.focus_mode {
-                " · Focus 모드"
+                " · Focus mode"
             } else {
                 ""
             }),
@@ -765,32 +765,35 @@ fn world_pulse_lines(snapshot: &ObserverSnapshot) -> Vec<Line<'static>> {
     lines.push(Line::from(vec![
         Span::styled(
             format!(
-                "지질 {} · 멸종 {}",
+                "Geology {} · Extinction {}",
                 snapshot.geologic_stage, snapshot.extinction_events
             ),
             Style::default().fg(Color::LightBlue),
         ),
         Span::raw(" | "),
         Span::styled(
-            format!("우주 {:.2}억년", snapshot.cosmic_age_years / 100_000_000.0),
+            format!("Space {:.2}00M yrs", snapshot.cosmic_age_years / 100_000_000.0),
             Style::default().fg(Color::Cyan),
         ),
     ]));
 
     lines.push(Line::from(vec![
         Span::styled(
-            format!("전쟁 피로 {:.1}", snapshot.overlay.war_fatigue),
+            format!("War Fatigue {:.1}", snapshot.overlay.war_fatigue),
             Style::default().fg(Color::LightRed),
         ),
         Span::raw(" | "),
         Span::styled(
-            format!("풍부도 {:.0}%", snapshot.overlay.resource_richness * 100.0),
+            format!(
+                "Richness {:.0}%",
+                snapshot.overlay.resource_richness * 100.0
+            ),
             Style::default().fg(Color::Green),
         ),
         Span::raw(" | "),
         Span::styled(
             format!(
-                "빙선 {:.0}% / 해수 {:.0}%",
+                "Ice Line {:.0}% / Sea Level {:.0}%",
                 snapshot.overlay.ice_line * 100.0,
                 snapshot.overlay.sea_level * 100.0
             ),
@@ -800,18 +803,18 @@ fn world_pulse_lines(snapshot: &ObserverSnapshot) -> Vec<Line<'static>> {
 
     lines.push(Line::from(vec![
         Span::styled(
-            format!("과학 {:.1}%", snapshot.science_victory.leader_progress),
+            format!("Science {:.1}%", snapshot.science_victory.leader_progress),
             Style::default().fg(Color::LightGreen),
         ),
         Span::raw(" | "),
         Span::styled(
             format!(
-                "우주 {:.1}%",
+                "Space {:.1}%",
                 snapshot.science_victory.interstellar_progress
             ),
             Style::default().fg(Color::Magenta),
         ),
-        Span::raw(" | 이벤트 "),
+        Span::raw(" | Events "),
         Span::styled(
             snapshot.events.len().to_string(),
             Style::default().fg(Color::Yellow),
@@ -819,7 +822,7 @@ fn world_pulse_lines(snapshot: &ObserverSnapshot) -> Vec<Line<'static>> {
     ]));
 
     lines.push(Line::from(vec![
-        Span::styled("크로니클 ", Style::default().fg(Color::LightYellow)),
+        Span::styled("Chronicle ", Style::default().fg(Color::LightYellow)),
         Span::raw(narrative_ticker(snapshot)),
     ]));
 
@@ -855,7 +858,7 @@ fn render_world_state_panel(
         .science_victory
         .leader
         .map(|n| n.name().to_string())
-        .unwrap_or_else(|| "미정".to_string());
+        .unwrap_or_else(|| "TBD".to_string());
     let leader_progress = snapshot
         .science_victory
         .leader_progress
@@ -872,12 +875,12 @@ fn render_world_state_panel(
 
     let info_lines = vec![
         Line::from(format!(
-            "세대(Tick): {} | Entities: {} | 목표: 달 탐사 100%",
+            "Ticks: {} | Entities: {} | Goal: Moon 100%",
             tick, total_entities
         )),
         Line::from(vec![
             Span::styled(
-                if control.paused { "정지" } else { "실행" },
+                if control.paused { "PAUSED" } else { "LIVE" },
                 Style::default()
                     .fg(if control.paused {
                         Color::Yellow
@@ -893,12 +896,12 @@ fn render_world_state_panel(
             ),
             Span::raw(" | "),
             Span::styled(
-                format!("{:.0}년/틱", control.years_per_tick),
+                format!("{:.0}y/tick", control.years_per_tick),
                 Style::default().fg(Color::Cyan),
             ),
             Span::raw(" | "),
             Span::styled(
-                format!("모드 {}", active_preset),
+                format!("Preset {}", active_preset),
                 Style::default().fg(Color::Magenta),
             ),
         ]),
@@ -907,7 +910,7 @@ fn render_world_state_panel(
             snapshot.epoch, snapshot.season
         )),
         Line::from(format!(
-            "대기: {} (ΔT {:+.1}, 사기 {:+.1}%, 수확 {:+.1}%, 위험 {:+.1}%)",
+            "Atmosphere: {} (ΔT {:+.1}, Morale {:+.1}%, Yield {:+.1}%, Risk {:+.1}%)",
             snapshot.season_effect.label,
             snapshot.season_effect.temperature * 10.0,
             snapshot.season_effect.morale_shift,
@@ -944,7 +947,7 @@ fn render_world_state_panel(
             ),
         ]),
         Line::from(format!(
-            "과학 승리: {} {:.1}% / 100% (격차 {:.1}p) | 성간 {:.1}% / {:.0}%",
+            "Science Victory: {} {:.1}% / 100% (Gap {:.1}p) | Interstellar {:.1}% / {:.0}%",
             leader_name,
             leader_progress,
             gap,
@@ -952,7 +955,7 @@ fn render_world_state_panel(
             snapshot.science_victory.interstellar_goal
         )),
         Line::from(format!(
-            "세계 포트폴리오: 인구 {} | GDP {:.1} | 이벤트 {}",
+            "World Portfolio: Population {} | GDP {:.1} | Events {}",
             format_number_commas(snapshot.science_victory.total_population),
             snapshot.science_victory.total_economy,
             snapshot.events.len()
@@ -962,19 +965,19 @@ fn render_world_state_panel(
                 let owner = control
                     .selected_owner
                     .map(|n| n.name().to_string())
-                    .unwrap_or_else(|| "무주지".to_string());
+                    .unwrap_or_else(|| "Unclaimed".to_string());
                 let war = snapshot.combat_hexes.contains(&hex);
                 let nuke = snapshot.nuclear_hexes.contains(&hex);
                 format!(
-                    "선택 헥스 q:{} r:{} | 소유 {} | 전선 {} | 핵 {}",
+                    "Selected hex q:{} r:{} | Owner {} | Front {} | Nuke {}",
                     hex.q,
                     hex.r,
                     owner,
-                    if war { "예" } else { "없음" },
-                    if nuke { "예" } else { "없음" }
+                    if war { "Yes" } else { "None" },
+                    if nuke { "Yes" } else { "None" }
                 )
             }
-            None => "선택 헥스 없음 — 지도 클릭으로 선택".to_string(),
+            None => "Selected hex None — Click map to select".to_string(),
         }),
     ];
     let info_paragraph = Paragraph::new(info_lines);
@@ -1071,7 +1074,7 @@ fn render_world_state_panel(
                 .unwrap_or(20.0);
             nation_lines.push(Line::from(Span::styled(
                 format!(
-                    "  Trust {:.0} | Fear {:.0} | 이념 {:.0} / 결속 {:.0} / 변동 {:.0}",
+                    "  Trust {:.0} | Fear {:.0} | Ideology {:.0} / Cohesion {:.0} / Volatility {:.0}",
                     trust, fear, leaning, cohesion, volatility
                 ),
                 Style::default().fg(Color::Gray),
@@ -1086,20 +1089,23 @@ fn render_world_state_panel(
                 Style::default().fg(Color::Cyan),
             )));
             nation_lines.push(Line::from(Span::styled(
-                format!("  인구: {} 명", format_number_commas(metrics.population)),
+                format!(
+                    "  Population: {}",
+                    format_number_commas(metrics.population)
+                ),
                 Style::default().fg(Color::White),
             )));
             if let Some(civ_state) = snapshot.civ_state.0.get(&nation) {
                 nation_lines.push(Line::from(Span::styled(
                     format!(
-                        "  도시: {} | 행복도: {:.1} | 생산력: {:.1}",
+                        "  Cities: {} | Happiness: {:.1} | Production: {:.1}",
                         civ_state.cities, civ_state.happiness, civ_state.production
                     ),
                     Style::default().fg(Color::Yellow),
                 )));
             }
             let tech_list = if metrics.unlocked_techs.is_empty() {
-                "기술 없음".to_string()
+                "Tech None".to_string()
             } else {
                 metrics
                     .unlocked_techs
@@ -1119,40 +1125,25 @@ fn render_world_state_panel(
                     Style::default().fg(Color::Red).italic(),
                 )));
             } else {
-                nation_lines.push(Line::from(Span::styled(
-                    "  경제 (Economy)",
-                    Style::default(),
-                )));
+                nation_lines.push(Line::from(Span::styled("  Economy", Style::default())));
                 nation_lines.push(create_bar(metrics.economy, 100.0, 10, nation_color));
                 nation_lines.push(Line::from(Span::styled(
-                    "  과학 (Science)",
+                    "  Science (Science)",
                     Style::default(),
                 )));
                 nation_lines.push(create_bar(metrics.science, 100.0, 10, nation_color));
-                nation_lines.push(Line::from(Span::styled(
-                    "  문화 (Culture)",
-                    Style::default(),
-                )));
+                nation_lines.push(Line::from(Span::styled("  Culture", Style::default())));
                 nation_lines.push(create_bar(metrics.culture, 100.0, 10, nation_color));
                 nation_lines.push(Line::from(Span::styled(
-                    "  외교 (Diplomacy)",
+                    "  Diplomacy (Diplomacy)",
                     Style::default(),
                 )));
                 nation_lines.push(create_bar(metrics.diplomacy, 100.0, 10, nation_color));
-                nation_lines.push(Line::from(Span::styled(
-                    "  종교 (Religion)",
-                    Style::default(),
-                )));
+                nation_lines.push(Line::from(Span::styled("  Religion", Style::default())));
                 nation_lines.push(create_bar(metrics.religion, 100.0, 10, nation_color));
-                nation_lines.push(Line::from(Span::styled(
-                    "  군사 (Military)",
-                    Style::default(),
-                )));
+                nation_lines.push(Line::from(Span::styled("  Military", Style::default())));
                 nation_lines.push(create_bar(metrics.military, 100.0, 10, nation_color));
-                nation_lines.push(Line::from(Span::styled(
-                    "  영토 (Territory)",
-                    Style::default(),
-                )));
+                nation_lines.push(Line::from(Span::styled("  Territory", Style::default())));
                 nation_lines.push(create_bar(metrics.territory, 100.0, 10, nation_color));
             }
             let nation_paragraph = Paragraph::new(nation_lines).scroll((0, 0));
@@ -1166,7 +1157,7 @@ fn render_world_state_panel(
         Style::default().bold(),
     )));
     speed_lines.push(Line::from(format!(
-        "{} ms/tick | {:.0} 년/틱",
+        "{} ms/tick | {:.0} y/tick",
         control.tick_duration.as_millis(),
         control.years_per_tick
     )));
@@ -1186,12 +1177,12 @@ fn render_world_state_panel(
         Span::styled("< >", Style::default().fg(Color::Cyan).bold()),
         Span::from("  "),
         Span::styled("Space/P", Style::default().fg(Color::Yellow).bold()),
-        Span::from(" 정지/재생"),
+        Span::from(" PAUSED/RESUME"),
     ]));
     speed_lines.push(Line::from(vec![
-        Span::raw("1~4 프리셋  |  "),
+        Span::raw("1~4 Preset  |  "),
         Span::styled("R", Style::default().fg(Color::LightYellow).bold()),
-        Span::raw(" 초기화  |  Q 종료"),
+        Span::raw(" Reset  |  Q Quit"),
     ]));
     let speed_paragraph = Paragraph::new(speed_lines);
     frame.render_widget(speed_paragraph, panel_layout[6]);
@@ -1207,16 +1198,16 @@ fn render_science_progress_panel(frame: &mut Frame, area: Rect, snapshot: &Obser
         .science_victory
         .leader
         .map(|n| n.name().to_string())
-        .unwrap_or_else(|| "미정".to_string());
+        .unwrap_or_else(|| "TBD".to_string());
     let leader_progress = snapshot
         .science_victory
         .leader_progress
         .min(snapshot.science_victory.goal);
 
     let text = Paragraph::new(vec![
-        Line::from("달 탐사 진행도 (1틱 = 1세대)"),
+        Line::from("Moonshot progress (1 tick = 1 gen)"),
         Line::from(format!(
-            "주도국: {} | {:.1}% / {:.0}% | Cosmic {:.0}년/틱",
+            "Leader: {} | {:.1}% / {:.0}% | Cosmic {:.0}y/tick",
             leader_name,
             leader_progress,
             snapshot.science_victory.goal,
@@ -1252,7 +1243,7 @@ fn render_science_progress_panel(frame: &mut Frame, area: Rect, snapshot: &Obser
 
 fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
     let block = Block::default()
-        .title("Evolutionary Markets — 50억년 포트폴리오 흐름")
+        .title("Evolutionary Markets — 5B-year portfolio")
         .borders(Borders::ALL);
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -1272,10 +1263,10 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
 
     let legend = Paragraph::new(vec![
         Line::from(Span::styled(
-            "창발적 시간축과 거시 충격을 티커처럼 병렬 시각화",
+            "Parallel visualization of emergent timescales and macro shocks",
             Style::default().fg(Color::LightCyan),
         )),
-        Line::from("세대별 모멘텀 · 사건 밀도 · 분위기 벡터"),
+        Line::from("Per-tick momentum, event density, mood vector"),
     ]);
     frame.render_widget(legend, lanes[0]);
 
@@ -1290,7 +1281,7 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Moonshot Momentum — 주도국 궤도"),
+                .title("Moonshot Momentum — leader orbit"),
         )
         .data(&moon_series)
         .max(snapshot.science_victory.goal.max(1.0) as u64)
@@ -1361,7 +1352,7 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Event Density — 전쟁·무역·충격 거래량"),
+                .title("Event Density — War·Trade·Shock Count"),
         )
         .data(&event_density)
         .max(event_density.iter().cloned().max().unwrap_or(1))
@@ -1374,7 +1365,7 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Pulse / Sentiment — 진화적 무드 드리프트"),
+                .title("Pulse / Sentiment — Evolutionary Mood Drift"),
         )
         .data(&sentiment_curve)
         .max(sentiment_curve.iter().cloned().max().unwrap_or(1))
@@ -1421,7 +1412,15 @@ fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &ObserverSn
         *sentiment_score.entry(cat).or_default() += delta;
     }
 
-    let categories = ["전쟁", "무역", "사회", "거시충격", "과학", "우주", "시대"];
+    let categories = [
+        "War",
+        "Trade",
+        "Social",
+        "MacroShock",
+        "Science",
+        "Space",
+        "Era",
+    ];
     let max_count = counts.values().cloned().max().unwrap_or(1);
 
     let rows: Vec<Row> = categories
@@ -1449,20 +1448,20 @@ fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &ObserverSn
         ],
     )
     .header(
-        Row::new(vec!["종류", "거래량", "감성", "히트"])
+        Row::new(vec!["Type", "Count", "Sentiment", "Heat"])
             .style(Style::default().fg(Color::White).bold()),
     )
     .block(
         Block::default()
             .borders(Borders::ALL)
-            .title("사건 리더보드"),
+            .title("Event Leaderboard"),
     );
 
     frame.render_widget(table, area);
 }
 
 fn render_glory_tiles(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
-    let block = Block::default().borders(Borders::ALL).title("명예의 전당");
+    let block = Block::default().borders(Borders::ALL).title("Hall of Fame");
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -1505,31 +1504,31 @@ fn render_glory_tiles(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot
 
     let cards = vec![
         (
-            "인구 정점",
+            "Population Peak",
             top_pop
-                .map(|(n, pop)| format!("{} | {}명", n.name(), format_number_commas(pop)))
-                .unwrap_or_else(|| "데이터 없음".to_string()),
+                .map(|(n, pop)| format!("{} | {}", n.name(), format_number_commas(pop)))
+                .unwrap_or_else(|| "Data None".to_string()),
             Color::LightCyan,
         ),
         (
-            "경제 패권",
+            "Economic Hegemon",
             top_gdp
-                .map(|(n, m)| format!("{} | 경제 {:.1}", n.name(), m.economy))
-                .unwrap_or_else(|| "데이터 없음".to_string()),
+                .map(|(n, m)| format!("{} | Economy {:.1}", n.name(), m.economy))
+                .unwrap_or_else(|| "Data None".to_string()),
             Color::LightGreen,
         ),
         (
-            "과학 선두",
+            "Science Leader",
             science_leader
-                .map(|(n, p)| format!("{} | {:.1}% 달", n.name(), p))
-                .unwrap_or_else(|| "미정".to_string()),
+                .map(|(n, p)| format!("{} | {:.1}% Moon", n.name(), p))
+                .unwrap_or_else(|| "TBD".to_string()),
             Color::Yellow,
         ),
         (
-            "전쟁 승률",
+            "War Win Rate",
             war_champ
-                .map(|(n, w)| format!("{} | {}승", n, w))
-                .unwrap_or_else(|| "평화".to_string()),
+                .map(|(n, w)| format!("{} | {} Wins", n, w))
+                .unwrap_or_else(|| "Peace".to_string()),
             Color::LightRed,
         ),
     ];
@@ -1578,7 +1577,7 @@ fn render_war_theater_panel(frame: &mut Frame, area: Rect, snapshot: &ObserverSn
     armies.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
     for (nation, mil, terr) in armies.into_iter().take(3) {
         lines.push(Line::from(Span::styled(
-            format!("{} 군사 {:.1} / 영토 {:.1}", nation.name(), mil, terr),
+            format!("{} Mil {:.1} / Terr {:.1}", nation.name(), mil, terr),
             Style::default().fg(nation.color()),
         )));
     }
@@ -1610,18 +1609,18 @@ fn render_war_theater_panel(frame: &mut Frame, area: Rect, snapshot: &ObserverSn
         .collect::<Vec<_>>();
 
     if recent_battles.is_empty() {
-        lines.push(Line::from("최근 전투 없음 — 달 착륙 집중"));
+        lines.push(Line::from("Recent Battles None — Focus on Moon Landing"));
     } else {
         lines.push(Line::from(Span::styled(
-            "최근 전투",
+            "Recent Battles",
             Style::default().bold().fg(Color::White),
         )));
         for (win, lose, nuclear, casualties) in recent_battles.drain(..) {
             lines.push(Line::from(format!(
-                "{} vs {}{} | 사상자 {}",
+                "{} vs {}{} | Casualties {}",
                 win,
                 lose,
-                if nuclear { " (핵)" } else { "" },
+                if nuclear { " (Nuke)" } else { "" },
                 format_number_commas(casualties)
             )));
         }
@@ -1651,8 +1650,8 @@ impl<'a> Widget for MapWidget<'a> {
         let leader = self.snapshot.science_victory.leader;
 
         let season_tint = match season {
-            "불꽃 절정" => Color::Rgb(255, 120, 80),
-            "잿불 내림" => Color::DarkGray,
+            "Peak Flame" => Color::Rgb(255, 120, 80),
+            "Ember Fall" => Color::DarkGray,
             _ => Color::LightGreen,
         };
 
@@ -1979,7 +1978,7 @@ fn render_diagnostics_strip(
     let lines = vec![Line::from(vec![
         Span::styled(
             format!(
-                "로그 {}{}",
+                "Log {}{}",
                 control.log_filter.label(),
                 if control.log_pin_selected {
                     " (PIN)"
@@ -1994,30 +1993,30 @@ fn render_diagnostics_strip(
             control
                 .pinned_nation
                 .map(|n| n.name().to_string())
-                .unwrap_or_else(|| "없음".to_string()),
+                .unwrap_or_else(|| "None".to_string()),
             Style::default().fg(Color::Magenta),
         ),
-        Span::raw(" · 전쟁 피로 Δ "),
+        Span::raw(" · War Fatigue Δ "),
         Span::styled(
             format!("{:+.2}", war_trend),
             Style::default().fg(Color::Red),
         ),
-        Span::raw(" · 탄소 Δ "),
+        Span::raw(" · Carbon Δ "),
         Span::styled(
             format!("{:+.1}", carbon_trend),
             Style::default().fg(Color::Yellow),
         ),
-        Span::raw(" · 인구 Δ "),
+        Span::raw(" · Population Δ "),
         Span::styled(
             format_number_commas(pop_trend.max(0.0) as u64),
             Style::default().fg(Color::Green),
         ),
-        Span::raw(" · 동맹 "),
+        Span::raw(" · Alliances "),
         Span::styled(
             snapshot.diplomacy.alliances.len().to_string(),
             Style::default().fg(Color::Magenta),
         ),
-        Span::raw(" · 제재 "),
+        Span::raw(" · Sanctions "),
         Span::styled(
             snapshot.diplomacy.sanctions.len().to_string(),
             Style::default().fg(Color::Gray),
@@ -2066,21 +2065,21 @@ fn narrative_ticker(snapshot: &ObserverSnapshot) -> String {
             WorldEventKind::Trade {
                 actor, trade_focus, ..
             } => {
-                format!("{} 무역 — {}", actor.nation.name(), trade_focus)
+                format!("{} Trade — {}", actor.nation.name(), trade_focus)
             }
             WorldEventKind::Social {
                 convener,
                 gathering_theme,
                 ..
             } => {
-                format!("{} 모임 — {}", convener.nation.name(), gathering_theme)
+                format!("{} Gathering — {}", convener.nation.name(), gathering_theme)
             }
             WorldEventKind::MacroShock {
                 stressor,
                 projected_impact,
                 ..
             } => {
-                format!("충격 {} → {}", stressor, projected_impact)
+                format!("Shock {} → {}", stressor, projected_impact)
             }
             WorldEventKind::Warfare {
                 winner,
@@ -2091,32 +2090,32 @@ fn narrative_ticker(snapshot: &ObserverSnapshot) -> String {
                 format!(
                     "{} {} {}{}",
                     winner.name(),
-                    if *nuclear { "핵" } else { "전" },
+                    if *nuclear { "Nuke" } else { "War" },
                     loser.name(),
                     if *nuclear { "!" } else { "" }
                 )
             }
             WorldEventKind::EraShift { nation, era, .. } => {
-                format!("{} 시대 상승 → {}", nation.name(), era.label())
+                format!("{} Era Rise → {}", nation.name(), era.label())
             }
             WorldEventKind::ScienceProgress { nation, progress } => {
-                format!("{} 달 {:.0}%", nation.name(), progress)
+                format!("{} Moon {:.0}%", nation.name(), progress)
             }
             WorldEventKind::ScienceVictory { winner, .. } => {
-                format!("{} 과학 승리", winner.name())
+                format!("{} Science Victory", winner.name())
             }
             WorldEventKind::InterstellarProgress { leader, progress } => {
-                format!("{} 성간 {:.0}%", leader.name(), progress)
+                format!("{} Interstellar {:.0}%", leader.name(), progress)
             }
             WorldEventKind::InterstellarVictory { winner, .. } => {
-                format!("{} 우주 문명", winner.name())
+                format!("{} Space Civ", winner.name())
             }
         };
         snippets.push(snippet);
     }
 
     if snippets.is_empty() {
-        "고요한 순간 — 데이터 수집 중".to_string()
+        "Quiet Moment — collecting data".to_string()
     } else {
         snippets.join(" · ")
     }

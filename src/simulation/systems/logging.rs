@@ -16,12 +16,12 @@ fn badge(label: &str, color: Color) -> String {
 
 fn category_color(category: &str) -> Color {
     match category {
-        "무역" => Color::BrightCyan,
-        "사회" => Color::BrightMagenta,
-        "거시충격" => Color::BrightRed,
-        "전쟁" => Color::Red,
-        "시대" => Color::BrightBlue,
-        "과학" => Color::BrightCyan,
+        "Trade" => Color::BrightCyan,
+        "Social" => Color::BrightMagenta,
+        "MacroShock" => Color::BrightRed,
+        "War" => Color::Red,
+        "Era" => Color::BrightBlue,
+        "Science" => Color::BrightCyan,
         _ => Color::White,
     }
 }
@@ -57,7 +57,7 @@ fn format_event_line(event: &WorldEvent) -> String {
             let pressure = market_pressure.color(Color::Yellow).to_string();
 
             format!(
-                "{} {} {} {} {} {} {} {} 님이 {} 거래를 주도합니다 | 압력: {}",
+                "{} {} {} {} {} {} {} {} leads trade | focus {} | pressure {}",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -91,7 +91,7 @@ fn format_event_line(event: &WorldEvent) -> String {
             let cohesion = cohesion_level.color(Color::BrightGreen).to_string();
 
             format!(
-                "{} {} {} {} {} {} {} {} 님이 {} 주제로 모임을 엽니다 | 응집도: {}",
+                "{} {} {} {} {} {} {} {} hosts gathering {} | cohesion {}",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -115,11 +115,11 @@ fn format_event_line(event: &WorldEvent) -> String {
             let impact = projected_impact.color(Color::White).to_string();
             let casualty = casualties
                 .map(|c| format_number_commas(c))
-                .map(|c| format!(" | 피해 {}명", c))
+                .map(|c| format!(" | casualties {}", c))
                 .unwrap_or_default();
 
             format!(
-                "{} {} {} {} {} {} | 촉발: {} | 영향: {}{}",
+                "{} {} {} {} {} {} | catalyst: {} | impact: {}{}",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -141,17 +141,17 @@ fn format_event_line(event: &WorldEvent) -> String {
             let winner_badge = badge(winner.name(), winner.logging_color());
             let loser_badge = badge(loser.name(), loser.logging_color());
             let casualty_badge = badge(
-                &format!("사상자 {}명", format_number_commas(*casualties)),
+                &format!("Casualties {}", format_number_commas(*casualties)),
                 Color::BrightRed,
             );
             let nuke_badge = if *nuclear {
-                format!(" {} \u{0007}", badge("핵 공격", Color::Yellow))
+                format!(" {} \u{0007}", badge("Nuclear strike", Color::Yellow))
             } else {
                 String::new()
             };
 
             format!(
-                "{} {} {} {} {} {}가 {}와의 전쟁에서 승리하여 영토 {:.2}를 획득했습니다. {}{}",
+                "{} {} {} {} {} {} wins War vs {} gaining territory {:.2}. {}{}",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -174,7 +174,7 @@ fn format_event_line(event: &WorldEvent) -> String {
             let weapon_badge = badge(weapon.label(), Color::Yellow);
 
             format!(
-                "{} {} {} {} {} {} {} 시대로 진입 | 주력 무기 {}",
+                "{} {} {} {} {} {} enters {} era | main weapon {}",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -192,7 +192,7 @@ fn format_event_line(event: &WorldEvent) -> String {
                 Color::BrightCyan,
             );
             format!(
-                "{} {} {} {} {} {} 달 탐사 진행",
+                "{} {} {} {} {} {} lunar program progress",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -208,7 +208,7 @@ fn format_event_line(event: &WorldEvent) -> String {
                 Color::BrightGreen,
             );
             format!(
-                "{} {} {} {} {} {} 인류 달 착륙 달성!",
+                "{} {} {} {} {} {} science victory achieved!",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -221,7 +221,7 @@ fn format_event_line(event: &WorldEvent) -> String {
             let leader_badge = badge(leader.name(), leader.logging_color());
             let progress_badge = badge(&format!("{:.1}% / 100%", progress.min(100.0)), Color::Cyan);
             format!(
-                "{} {} {} {} {} {} 성간 이주 진행",
+                "{} {} {} {} {} {} interstellar migration progress",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -237,7 +237,7 @@ fn format_event_line(event: &WorldEvent) -> String {
                 Color::BrightGreen,
             );
             format!(
-                "{} {} {} {} {} {} 성간 정착 완료!",
+                "{} {} {} {} {} {} interstellar settlement complete!",
                 category_badge,
                 sentiment_badge,
                 tick_badge,
@@ -256,7 +256,7 @@ fn format_sample_line(
     position: &Position,
 ) -> String {
     let sentiment_badge = sentiment_tag(Sentiment::Neutral);
-    let category_badge = badge("상황", Color::BrightWhite);
+    let category_badge = badge("Status", Color::BrightWhite);
     let faction_badge = badge(
         faction_label(identity.faction),
         faction_color(identity.faction),
@@ -278,7 +278,7 @@ fn format_sample_line(
         .to_string();
 
     let mut line = format!(
-        "{} {} {} {} {} {} 의 현재 상태를 관측 중",
+        "{} {} {} {} {} {} observing current status",
         category_badge, sentiment_badge, faction_badge, behavior_badge, biome_badge, entity_name,
     );
 
@@ -303,11 +303,14 @@ fn format_sample_line(
                         .biomes
                         .get(biome)
                         .map(|b| b.label)
-                        .unwrap_or("미확인 거점")
+                        .unwrap_or("Unknown stronghold")
                 })
                 .collect::<Vec<_>>()
                 .join(", ");
-            let stronghold_badge = badge(&format!("거점 {}", stronghold_names), Color::BrightGreen);
+            let stronghold_badge = badge(
+                &format!("Stronghold {}", stronghold_names),
+                Color::BrightGreen,
+            );
             line.push_str(&format!(" | {}", stronghold_badge));
         }
     }
@@ -329,27 +332,27 @@ pub fn logging_system(
         .circulation_cycle
         .get(catalyst_index % world_meta.economy.circulation_cycle.len())
         .copied()
-        .unwrap_or("균형 거래");
+        .unwrap_or("Balanced trade");
     let stressor = world_meta
         .economy
         .stressors
         .get(catalyst_index % world_meta.economy.stressors.len())
         .copied()
-        .unwrap_or("안정 국면");
+        .unwrap_or("Stable phase");
 
     let header_line = format!(
         "{} {} {} {} {} {}",
-        badge("세계", Color::BrightWhite),
+        badge("World", Color::BrightWhite),
         badge(&format!("Tick {}", time.tick), Color::BrightBlack),
         badge(epoch, Color::BrightCyan),
         badge(season, Color::BrightBlue),
-        badge("순환", Color::BrightGreen),
+        badge("Cycle", Color::BrightGreen),
         badge(circulation_stage, Color::BrightGreen),
     );
 
     let stress_line = format!(
         "{} {} {}",
-        badge("촉매", Color::Yellow),
+        badge("Catalyst", Color::Yellow),
         badge(catalyst, Color::Yellow),
         badge(stressor, Color::BrightRed),
     );
@@ -380,7 +383,7 @@ pub fn logging_system(
 
     if !has_event {
         lines.push(
-            "[이벤트] 최근 등록된 세계 이벤트가 없습니다"
+            "[Event] No recent World events registered"
                 .color(Color::BrightBlack)
                 .to_string(),
         );

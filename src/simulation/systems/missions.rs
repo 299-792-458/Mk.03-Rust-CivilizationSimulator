@@ -36,8 +36,8 @@ pub fn mission_system(
         if time.tick % 48 == 0 && goals.intensity > 0.5 {
             log.push(WorldEvent {
                 tick: time.tick,
-                epoch: "임무".to_string(),
-                season: format!("위치 {:.0},{:.0}", position.x, position.y),
+                epoch: "Missions".to_string(),
+                season: format!("Pos {:.0},{:.0}", position.x, position.y),
                 kind: WorldEventKind::Social {
                     convener: crate::simulation::EventActor {
                         id: id.id,
@@ -50,8 +50,8 @@ pub fn mission_system(
                         behavior_hint: target_state,
                         behavior_hint_label: format!("{:?}", target_state),
                     },
-                    gathering_theme: format!("{} 임무", goal_label(goals.primary)),
-                    cohesion_level: format!("강도 {:.1}", goals.intensity),
+                    gathering_theme: format!("{} mission", goal_label(goals.primary)),
+                    cohesion_level: format!("Intensity {:.1}", goals.intensity),
                 },
             });
         }
@@ -60,9 +60,9 @@ pub fn mission_system(
 
 fn goal_label(goal: crate::simulation::GoalKind) -> &'static str {
     match goal {
-        crate::simulation::GoalKind::Wealth => "부의 추구",
-        crate::simulation::GoalKind::Glory => "명예 사냥",
-        crate::simulation::GoalKind::Survival => "생존",
-        crate::simulation::GoalKind::Influence => "영향력",
+        crate::simulation::GoalKind::Wealth => "Wealth",
+        crate::simulation::GoalKind::Glory => "Glory",
+        crate::simulation::GoalKind::Survival => "Survival",
+        crate::simulation::GoalKind::Influence => "Influence",
     }
 }

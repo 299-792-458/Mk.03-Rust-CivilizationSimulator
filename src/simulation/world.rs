@@ -190,13 +190,13 @@ impl Default for WorldMetadata {
             (
                 Biome::Forest,
                 BiomeMetadata {
-                    label: "비단숲 장막",
-                    epithet: "수관이 속삭이는 땅",
+                    label: "Silken Veil Forest",
+                    epithet: "Land of Whispering Canopies",
                     description:
-                        "약초와 숨겨진 성소, 사나운 정령이 공존하는 고대의 숲입니다.",
+                        "Ancient forest where herbs, hidden shrines, and fierce spirits coexist.",
                     anchor: (6.0, 4.5),
-                    resource_profile: vec!["약초", "목재", "희귀 동물"],
-                    tensions: vec!["산적 매복", "탐험단 원정", "성소 수호령"],
+                    resource_profile: vec!["Herbs", "Lumber", "Rare Animals"],
+                    tensions: vec!["Bandit Ambush", "Expedition Venture", "Shrine Guardian"],
                     behavior_bias: HashMap::from([
                         (Explore, 1.25),
                         (Gather, 1.2),
@@ -213,13 +213,13 @@ impl Default for WorldMetadata {
             (
                 Biome::Plains,
                 BiomeMetadata {
-                    label: "은바람 평야",
-                    epithet: "드넓은 하늘 아래 대상 행렬",
+                    label: "Silverwind Plains",
+                    epithet: "Caravan Procession Under Vast Skies",
                     description:
-                        "대상 행렬과 윤작, 기마 순찰이 끊이지 않는 광활한 초원입니다.",
+                        "Vast grasslands with ceaseless caravans, crop rotation, and mounted patrols.",
                     anchor: (1.0, 2.0),
-                    resource_profile: vec!["곡물", "가축", "섬유"],
-                    tensions: vec!["수확 분쟁", "맹수 이동", "대상 통행세"],
+                    resource_profile: vec!["Grain", "Livestock", "Fiber"],
+                    tensions: vec!["Harvest Dispute", "Beast Migration", "Caravan Toll"],
                     behavior_bias: HashMap::from([
                         (Trade, 1.2),
                         (Gather, 1.1),
@@ -236,13 +236,13 @@ impl Default for WorldMetadata {
             (
                 Biome::Desert,
                 BiomeMetadata {
-                    label: "잿빛 신기루",
-                    epithet: "모래언덕 아래 잠든 유적",
+                    label: "Ashen Mirage",
+                    epithet: "Ruins Sleeping Under Dunes",
                     description:
-                        "고대 유적과 위험한 신기루가 뒤엉킨 사막으로, 모든 원정을 시험합니다.",
+                        "Desert intertwined with ancient ruins and dangerous mirages, testing all expeditions.",
                     anchor: (-4.0, -1.5),
-                    resource_profile: vec!["유물", "광물", "유리뿌리"],
-                    tensions: vec!["물 부족", "모래폭풍", "유물 쟁탈"],
+                    resource_profile: vec!["Relics", "Minerals", "Glassroots"],
+                    tensions: vec!["Water Scarcity", "Sandstorm", "Relic Scramble"],
                     behavior_bias: HashMap::from([
                         (Explore, 1.1),
                         (Hunt, 1.25),
@@ -259,13 +259,13 @@ impl Default for WorldMetadata {
             (
                 Biome::Village,
                 BiomeMetadata {
-                    label: "난롯불 회랑",
-                    epithet: "공동체의 심장부",
+                    label: "Hearthfire Corridor",
+                    epithet: "Heart of the Community",
                     description:
-                        "작업장과 곡창, 사원 의원이 촘촘히 연결된 마을의 고리입니다.",
+                        "A ring of villages where workshops, granaries, and temples are tightly connected.",
                     anchor: (3.5, -3.0),
-                    resource_profile: vec!["가공품", "공예 기술", "신앙 의례"],
-                    tensions: vec!["시민 갈등", "질병 확산", "보급 부족"],
+                    resource_profile: vec!["Goods", "Craftsmanship", "Rituals"],
+                    tensions: vec!["Civil Conflict", "Disease Spread", "Supply Shortage"],
                     behavior_bias: HashMap::from([
                         (Trade, 1.1),
                         (Rest, 1.2),
@@ -282,13 +282,13 @@ impl Default for WorldMetadata {
             (
                 Biome::Market,
                 BiomeMetadata {
-                    label: "황금 합류지",
-                    epithet: "상업의 맥박",
+                    label: "Golden Confluence",
+                    epithet: "Pulse of Commerce",
                     description:
-                        "길드 평의회가 거래·관세·외교 휴전을 조율하는 층층이 쌓인 시장 도시입니다.",
+                        "Tiered market city where the Guild Council coordinates trade, tariffs, and truces.",
                     anchor: (0.0, 0.0),
-                    resource_profile: vec!["화폐", "계약서", "정보"],
-                    tensions: vec!["관세 전쟁", "투기 붕괴", "길드 암투"],
+                    resource_profile: vec!["Currency", "Contracts", "Intel"],
+                    tensions: vec!["Tariff War", "Speculative Crash", "Guild Infighting"],
                     behavior_bias: HashMap::from([
                         (Trade, 1.35),
                         (Idle, 0.9),
@@ -310,9 +310,9 @@ impl Default for WorldMetadata {
             (
                 Faction::MerchantGuild,
                 FactionMetadata {
-                    motto: "장부를 맞추고 세상을 안정시킨다.",
-                    doctrine: "거래 외교, 대상 호위, 가격 조정을 핵심으로 삼습니다.",
-                    influence_vectors: vec!["관세 조정", "공급 계약", "신용 발행"],
+                    motto: "Balance the ledger, stabilize the world.",
+                    doctrine: "Focuses on trade diplomacy, caravan escort, and price adjustment.",
+                    influence_vectors: vec!["Tariff Adjustment", "Supply Contract", "Credit Issuance"],
                     strongholds: vec![Biome::Market, Biome::Plains],
                     behavior_modifiers: HashMap::from([
                         (BehaviorState::Trade, 1.4),
@@ -329,9 +329,9 @@ impl Default for WorldMetadata {
             (
                 Faction::BanditClans,
                 FactionMetadata {
-                    motto: "세상이 숨긴 것을 탈취하라.",
-                    doctrine: "비대칭 기습과 공포 전술, 유물 독점으로 영향력을 넓힙니다.",
-                    influence_vectors: vec!["매복 위협", "암시장", "밀수망"],
+                    motto: "Seize what the world hides.",
+                    doctrine: "Expands influence via asymmetric raids, terror tactics, and relic monopolies.",
+                    influence_vectors: vec!["Ambush Threat", "Black Market", "Smuggling Network"],
                     strongholds: vec![Biome::Forest, Biome::Desert],
                     behavior_modifiers: HashMap::from([
                         (BehaviorState::Hunt, 1.45),
@@ -349,9 +349,9 @@ impl Default for WorldMetadata {
             (
                 Faction::ExplorersLeague,
                 FactionMetadata {
-                    motto: "미지를 그리고 보이지 않는 것을 손에 쥔다.",
-                    doctrine: "정찰 임무, 이상 지형 기록, 유물 감정을 수행합니다.",
-                    influence_vectors: vec!["발견권", "지도 정보", "유물 감정"],
+                    motto: "Map the unknown, grasp the invisible.",
+                    doctrine: "Conducts reconnaissance, anomaly recording, and relic appraisal.",
+                    influence_vectors: vec!["Discovery Rights", "Map Intel", "Relic Appraisal"],
                     strongholds: vec![Biome::Forest, Biome::Desert],
                     behavior_modifiers: HashMap::from([
                         (BehaviorState::Explore, 1.5),
@@ -369,9 +369,9 @@ impl Default for WorldMetadata {
             (
                 Faction::SettlersUnion,
                 FactionMetadata {
-                    motto: "노동에 뿌리내리고 공예로 성장한다.",
-                    doctrine: "협동 노동과 농업 계획, 도시 재건을 주도합니다.",
-                    influence_vectors: vec!["인프라 건설", "수확 관리", "공동체 축제"],
+                    motto: "Rooted in labor, growing through craft.",
+                    doctrine: "Leads cooperative labor, agricultural planning, and urban reconstruction.",
+                    influence_vectors: vec!["Infrastructure", "Harvest Mgmt", "Community Festivals"],
                     strongholds: vec![Biome::Plains, Biome::Village],
                     behavior_modifiers: HashMap::from([
                         (BehaviorState::Gather, 1.35),
@@ -389,9 +389,9 @@ impl Default for WorldMetadata {
             (
                 Faction::TempleOfSuns,
                 FactionMetadata {
-                    motto: "세 개의 태양, 하나의 조화로운 빛.",
-                    doctrine: "평화 중재와 유물 정화, 공공 복지를 맡습니다.",
-                    influence_vectors: vec!["치유 의식", "순례망", "도덕적 권위"],
+                    motto: "Three suns, one harmonious light.",
+                    doctrine: "Handles peace mediation, relic purification, and public welfare.",
+                    influence_vectors: vec!["Healing Rituals", "Pilgrimage Net", "Moral Authority"],
                     strongholds: vec![Biome::Village, Biome::Market],
                     behavior_modifiers: HashMap::from([
                         (BehaviorState::Rest, 1.4),
@@ -412,25 +412,30 @@ impl Default for WorldMetadata {
 
         let economy = EconomyMetadata {
             circulation_cycle: vec![
-                "시장 경매",
-                "상단 대상",
-                "마을 서비스",
-                "사막 원정",
-                "시장 환류",
+                "Market Auction",
+                "Guild Bidding",
+                "Village Services",
+                "Desert Expedition",
+                "Market Reflux",
             ],
             stressors: vec![
-                "가뭄 압박",
-                "산적 급습",
-                "화폐 절하",
-                "유물 부족",
-                "역병 확산",
+                "Drought Pressure",
+                "Bandit Raid",
+                "Currency Devaluation",
+                "Relic Shortage",
+                "Plague Spread",
             ],
-            catalysts: vec!["사원 축제", "탐험가 돌파구", "길드 관세 인하", "연합 풍년"],
+            catalysts: vec![
+                "Temple Festival",
+                "Explorer Breakthrough",
+                "Guild Tariff Cut",
+                "Union Harvest",
+            ],
         };
 
         let epochs = EpochCadence {
-            day_segments: vec!["새벽", "한낮", "해질녘"],
-            seasons: vec!["꽃피움 계절", "불꽃 절정", "잿불 내림"],
+            day_segments: vec!["Dawn", "Midday", "Dusk"],
+            seasons: vec!["Flower Bloom", "Sunburst Peak", "Ashfall"],
         };
 
         Self {

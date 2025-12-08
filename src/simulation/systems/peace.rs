@@ -2,7 +2,7 @@ use bevy_ecs::prelude::*;
 
 use crate::simulation::{AllNationMetrics, ScienceVictory, WarFatigue};
 
-/// Soft recovery system rewarding 평화 상태: 낮은 전쟁 피로에서 경제/문화/과학이 회복.
+/// Soft recovery system rewarding peace: low war fatigue recovers economy/culture/science.
 pub fn peace_recovery_system(
     mut metrics: ResMut<AllNationMetrics>,
     warfatigue: Res<WarFatigue>,

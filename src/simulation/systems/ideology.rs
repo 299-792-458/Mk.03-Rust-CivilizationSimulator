@@ -56,21 +56,21 @@ pub fn ideology_system(
             *vol -= 10.0; // bleed off after an outburst
             log.push(WorldEvent {
                 tick: time.tick,
-                epoch: "사상".to_string(),
-                season: "불안".to_string(),
+                epoch: "Ideology".to_string(),
+                season: "Unrest".to_string(),
                 kind: WorldEventKind::Social {
                     convener: crate::simulation::EventActor {
                         id: 0,
-                        name: format!("{} 내부 파벌", nation.name()),
+                        name: format!("{} inner faction", nation.name()),
                         nation: *nation,
                         faction: Faction::Neutral,
-                        faction_label: "내부".to_string(),
+                        faction_label: "Internal".to_string(),
                         biome: Biome::Plains,
                         biome_label: "Plains".to_string(),
                         behavior_hint: BehaviorState::Idle,
                         behavior_hint_label: "Idle".to_string(),
                     },
-                    gathering_theme: "이념 충돌/폭동".to_string(),
+                    gathering_theme: "Ideology clash/riot".to_string(),
                     cohesion_level: format!("vol {:.0}", *vol),
                 },
             });

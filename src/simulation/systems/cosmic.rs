@@ -24,13 +24,13 @@ pub fn cosmic_time_system(
             epoch: epoch.to_string(),
             season: season.to_string(),
             kind: WorldEventKind::MacroShock {
-                stressor: "지질/우주 전환".to_string(),
+                stressor: "Geologic/space transition".to_string(),
                 catalyst: format!(
-                    "나이 {:.2}억년 | 단계 {}",
+                    "Age {:.2}e8 yrs | Stage {}",
                     cosmic.cosmic_age_years / 100_000_000.0,
                     cosmic.geologic_stage
                 ),
-                projected_impact: "환경/생물권 리셋 가능".to_string(),
+                projected_impact: "Environment/biosphere reset possible".to_string(),
                 casualties: None,
             },
         });
@@ -96,13 +96,13 @@ pub fn extinction_system(
         epoch: epoch.to_string(),
         season: season.to_string(),
         kind: WorldEventKind::MacroShock {
-            stressor: "대멸종/재부팅".to_string(),
+            stressor: "Mass extinction/reboot".to_string(),
             catalyst: format!(
-                "사건 {}회 | 나이 {:.2}억년",
+                "Events {} | Age {:.2}e8 yrs",
                 cosmic.extinction_events,
                 cosmic.cosmic_age_years / 100_000_000.0
             ),
-            projected_impact: "인구·자원 리셋 후 재생".to_string(),
+            projected_impact: "Population/resource reset then regrowth".to_string(),
             casualties: None,
         },
     });
@@ -111,16 +111,16 @@ pub fn extinction_system(
 fn stage_for_age(age_years: f64) -> String {
     let gy = age_years / 1_000_000_000.0;
     if gy < 0.5 {
-        "원시 지각".to_string()
+        "Primordial Crust".to_string()
     } else if gy < 1.0 {
-        "태고 해양".to_string()
+        "Ancient Ocean".to_string()
     } else if gy < 2.5 {
-        "산소 폭발".to_string()
+        "Oxygen Bloom".to_string()
     } else if gy < 3.5 {
-        "캄브리아/대륙 분화".to_string()
+        "Cambrian/Continental Split".to_string()
     } else if gy < 4.5 {
-        "대멸종 순환".to_string()
+        "Extinction Cycle".to_string()
     } else {
-        "문명/우주기".to_string()
+        "Civilization/Space Age".to_string()
     }
 }

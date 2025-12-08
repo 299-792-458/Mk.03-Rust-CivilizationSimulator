@@ -119,14 +119,14 @@ impl ObserverSnapshot {
     pub fn new() -> Self {
         Self {
             tick: 0,
-            epoch: "새벽".to_string(),
-            season: "꽃피움 계절".to_string(),
+            epoch: "Dawn".to_string(),
+            season: "Season of Bloom".to_string(),
             cosmic_age_years: 0.0,
             timescale_years_per_tick: 1_000_000.0,
-            geologic_stage: "행성 형성".to_string(),
+            geologic_stage: "Planetary Formation".to_string(),
             extinction_events: 0,
             season_effect: SeasonEffectSnapshot {
-                label: "온화한 바람".to_string(),
+                label: "Gentle Breeze".to_string(),
                 temperature: 0.0,
                 morale_shift: 0.0,
                 yield_shift: 0.0,

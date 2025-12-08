@@ -6,23 +6,23 @@ use crate::simulation::{BehaviorState, Faction, Sentiment};
 
 pub fn behavior_label(state: BehaviorState) -> &'static str {
     match state {
-        BehaviorState::Idle => "휴식 대기",
-        BehaviorState::Explore => "탐험",
-        BehaviorState::Gather => "채집",
-        BehaviorState::Trade => "거래",
-        BehaviorState::Hunt => "사냥",
-        BehaviorState::Rest => "회복",
+        BehaviorState::Idle => "Idle",
+        BehaviorState::Explore => "Explore",
+        BehaviorState::Gather => "Gather",
+        BehaviorState::Trade => "Trade",
+        BehaviorState::Hunt => "Hunt",
+        BehaviorState::Rest => "Rest",
     }
 }
 
 pub fn faction_label(faction: Faction) -> &'static str {
     match faction {
-        Faction::Neutral => "중립 연합",
-        Faction::MerchantGuild => "상인 길드",
-        Faction::BanditClans => "산적 연맹",
-        Faction::ExplorersLeague => "탐험가 연맹",
-        Faction::SettlersUnion => "개척민 연합",
-        Faction::TempleOfSuns => "태양의 성전",
+        Faction::Neutral => "Neutral Alliance",
+        Faction::MerchantGuild => "Merchant Guild",
+        Faction::BanditClans => "Bandit Clans",
+        Faction::ExplorersLeague => "Explorers League",
+        Faction::SettlersUnion => "Settlers Union",
+        Faction::TempleOfSuns => "Temple of Suns",
     }
 }
 
@@ -50,9 +50,9 @@ pub fn faction_color(faction: Faction) -> Color {
 
 pub fn sentiment_label(sentiment: Sentiment) -> &'static str {
     match sentiment {
-        Sentiment::Positive => "긍정",
-        Sentiment::Neutral => "중립",
-        Sentiment::Negative => "부정",
+        Sentiment::Positive => "Positive",
+        Sentiment::Neutral => "Neutral",
+        Sentiment::Negative => "Negative",
     }
 }
 

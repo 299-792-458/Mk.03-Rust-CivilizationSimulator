@@ -5,7 +5,7 @@ use crate::simulation::{
     WorldTime,
 };
 
-/// 누가 달 탐사(과학 승리)를 선도하는지 세대별 기록을 쌓는다. 1틱=1세대.
+/// Tracks moonshot (science victory) leader per tick. 1 tick = 1 generation.
 pub fn science_victory_system(
     mut tracker: ResMut<ScienceVictory>,
     all_metrics: Res<AllNationMetrics>,
@@ -14,7 +14,7 @@ pub fn science_victory_system(
     time: Res<WorldTime>,
     world_meta: Res<WorldMetadata>,
 ) {
-    // Phase 1: 달 탐사 (과학 승리)
+    // Phase 1: Lunar exploration (science victory)
     if !tracker.moon_done {
         let (epoch, season) = world_meta.epoch_for_tick(time.tick);
         let mut leader: Option<(Nation, f32)> = None;
@@ -96,7 +96,7 @@ pub fn science_victory_system(
                 leader = Some((*nation, progress_now));
             }
 
-            // Milestone 이벤트 (25% 단위)
+            // Milestone event (every 25%)
             let milestone_counter = tracker.milestones.entry(*nation).or_insert(0);
             let next_threshold = (*milestone_counter as f32 + 1.0) * 25.0;
             if progress_now >= next_threshold && *milestone_counter < 4 {
@@ -166,7 +166,7 @@ pub fn science_victory_system(
             tracker.interstellar_mode = true;
         }
     } else if tracker.interstellar_mode {
-        // Phase 3: 성간 확장
+        // Phase 3: Interstellar expansion
         let (epoch, season) = world_meta.epoch_for_tick(time.tick);
         let leader = tracker.winner.unwrap_or(Nation::Tera);
         let base = tracker.interstellar_progress;

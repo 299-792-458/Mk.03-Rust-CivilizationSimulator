@@ -14,13 +14,13 @@ pub enum Era {
 impl Era {
     pub fn label(&self) -> &'static str {
         match self {
-            Era::Dawn => "석기 시대",
-            Era::Ancient => "청동기 시대",
-            Era::Classical => "고전 시대",
-            Era::Medieval => "중세 시대",
-            Era::Industrial => "산업 시대",
-            Era::Modern => "현대",
-            Era::Nuclear => "핵/미래",
+            Era::Dawn => "Stone Age",
+            Era::Ancient => "Bronze Age",
+            Era::Classical => "Classical Era",
+            Era::Medieval => "Medieval Era",
+            Era::Industrial => "Industrial Era",
+            Era::Modern => "Modern Era",
+            Era::Nuclear => "Nuclear/Future",
         }
     }
 
@@ -52,14 +52,14 @@ pub enum WeaponTier {
 impl WeaponTier {
     pub fn label(&self) -> &'static str {
         match self {
-            WeaponTier::KnappedStone => "뗀석기",
-            WeaponTier::PolishedStone => "간석기",
-            WeaponTier::Bow => "활",
-            WeaponTier::Crossbow => "석궁",
-            WeaponTier::Gunpowder => "화약",
-            WeaponTier::SteelArmor => "강철 장비",
-            WeaponTier::ModernArmor => "현대화 전차",
-            WeaponTier::NuclearArsenal => "핵/전략무기",
+            WeaponTier::KnappedStone => "Knapped Stone",
+            WeaponTier::PolishedStone => "Polished Stone",
+            WeaponTier::Bow => "Bow",
+            WeaponTier::Crossbow => "Crossbow",
+            WeaponTier::Gunpowder => "Gunpowder",
+            WeaponTier::SteelArmor => "Steel Armor",
+            WeaponTier::ModernArmor => "Modern Tank",
+            WeaponTier::NuclearArsenal => "Nuclear Arsenal",
         }
     }
 
@@ -92,14 +92,14 @@ pub enum Tech {
 impl Tech {
     pub fn label(&self) -> &'static str {
         match self {
-            Tech::Knapping => "뗀석기 연마",
-            Tech::PolishedTools => "간석기 공정",
-            Tech::Archery => "활 제작",
-            Tech::Siegecraft => "공성술",
-            Tech::Metallurgy => "금속 제련",
-            Tech::GunpowderChemistry => "화약 화학",
-            Tech::Ballistics => "탄도학",
-            Tech::NuclearPhysics => "핵 물리학",
+            Tech::Knapping => "Knapping",
+            Tech::PolishedTools => "Polished Tools",
+            Tech::Archery => "Archery",
+            Tech::Siegecraft => "Siegecraft",
+            Tech::Metallurgy => "Metallurgy",
+            Tech::GunpowderChemistry => "Gunpowder Chemistry",
+            Tech::Ballistics => "Ballistics",
+            Tech::NuclearPhysics => "Nuclear Physics",
         }
     }
 }

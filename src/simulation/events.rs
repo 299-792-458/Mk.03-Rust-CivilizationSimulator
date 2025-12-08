@@ -89,15 +89,15 @@ pub struct WorldEvent {
 impl WorldEvent {
     pub fn category(&self) -> &'static str {
         match &self.kind {
-            WorldEventKind::Trade { .. } => "무역",
-            WorldEventKind::Social { .. } => "사회",
-            WorldEventKind::MacroShock { .. } => "거시충격",
-            WorldEventKind::Warfare { .. } => "전쟁",
-            WorldEventKind::EraShift { .. } => "시대",
-            WorldEventKind::ScienceProgress { .. } => "과학",
-            WorldEventKind::ScienceVictory { .. } => "과학",
-            WorldEventKind::InterstellarProgress { .. } => "우주",
-            WorldEventKind::InterstellarVictory { .. } => "우주",
+            WorldEventKind::Trade { .. } => "Trade",
+            WorldEventKind::Social { .. } => "Social",
+            WorldEventKind::MacroShock { .. } => "MacroShock",
+            WorldEventKind::Warfare { .. } => "War",
+            WorldEventKind::EraShift { .. } => "Era",
+            WorldEventKind::ScienceProgress { .. } => "Science",
+            WorldEventKind::ScienceVictory { .. } => "Science",
+            WorldEventKind::InterstellarProgress { .. } => "Space",
+            WorldEventKind::InterstellarVictory { .. } => "Space",
         }
     }
 
@@ -123,7 +123,7 @@ impl WorldEvent {
                 trade_focus,
                 market_pressure,
             } => format!(
-                "{} 님이 {} 거래를 조율합니다 | 압력: {}",
+                "{} coordinates {} trade | Pressure: {}",
                 actor.name, trade_focus, market_pressure
             ),
             WorldEventKind::Social {
@@ -131,7 +131,7 @@ impl WorldEvent {
                 gathering_theme,
                 cohesion_level,
             } => format!(
-                "{} 님이 \"{}\" 주제로 모임을 주관합니다 | 응집도: {}",
+                "{} hosts gathering on \"{}\" | Cohesion: {}",
                 convener.name, gathering_theme, cohesion_level
             ),
             WorldEventKind::MacroShock {
@@ -140,12 +140,12 @@ impl WorldEvent {
                 projected_impact,
                 casualties,
             } => format!(
-                "{} | 촉발 요인: {} | 영향: {}{}",
+                "{} | Catalyst: {} | Impact: {}{}",
                 stressor,
                 catalyst,
                 projected_impact,
                 casualties
-                    .map(|c| format!(" | 피해: {}", crate::simulation::format_number_commas(c)))
+                    .map(|c| format!(" | Casualties: {}", crate::simulation::format_number_commas(c)))
                     .unwrap_or_default()
             ),
             WorldEventKind::Warfare {
@@ -155,39 +155,39 @@ impl WorldEvent {
                 casualties,
                 nuclear,
             } => format!(
-                "{}가 {}와의 전쟁에서 승리하여 영토 {:.2}를 획득했습니다. 사상자 {}명{}",
+                "{} wins war against {}, gaining territory {:.2}. Casualties {}{}",
                 winner.name(),
                 loser.name(),
                 territory_change,
                 crate::simulation::format_number_commas(*casualties),
-                if *nuclear { " | 핵 공격" } else { "" }
+                if *nuclear { " | Nuclear Strike" } else { "" }
             ),
             WorldEventKind::EraShift {
                 nation,
                 era,
                 weapon,
             } => format!(
-                "{}가 {}에 돌입했습니다 | 주력 무기: {}",
+                "{} has entered {} | Main Weapon: {}",
                 nation.name(),
                 era.label(),
                 weapon.label()
             ),
             WorldEventKind::ScienceProgress { nation, progress } => format!(
-                "{}의 달 탐사 진행 {:.1}% / 100% (1틱=1세대)",
+                "{} Moon Exploration Progress {:.1}% / 100% (1 tick = 1 gen)",
                 nation.name(),
                 progress.min(100.0)
             ),
             WorldEventKind::ScienceVictory { winner, .. } => format!(
-                "{}가 인류 최초 달 착륙을 달성했습니다! 전 인류의 과학 승리",
+                "{} achieved the first Moon Landing! Science Victory for all humanity",
                 winner.name()
             ),
             WorldEventKind::InterstellarProgress { leader, progress } => format!(
-                "{}의 성간 이주 진행 {:.1}% / 100%",
+                "{} Interstellar Migration Progress {:.1}% / 100%",
                 leader.name(),
                 progress.min(100.0)
             ),
             WorldEventKind::InterstellarVictory { winner, .. } => format!(
-                "{}가 성간 정착을 완성했습니다! 우주 문명으로 진화",
+                "{} completed Interstellar Settlement! Evolved into Space Civilization",
                 winner.name()
             ),
         }

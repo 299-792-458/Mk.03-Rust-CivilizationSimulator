@@ -59,7 +59,7 @@ pub fn event_generation_system(
                     )
                 }
             })
-            .unwrap_or_else(|| "일반 교역품".to_string());
+            .unwrap_or_else(|| "General Goods".to_string());
 
         let pressure = world_meta
             .faction_profile(identity.faction)
@@ -73,7 +73,7 @@ pub fn event_generation_system(
                     )
                 }
             })
-            .unwrap_or_else(|| "지역 수요 지표".to_string());
+            .unwrap_or_else(|| "Local Demand Index".to_string());
 
         let actor = EventActor {
             id: identity.id,
@@ -91,9 +91,9 @@ pub fn event_generation_system(
 
         let market_label = biome_profile
             .map(|meta| meta.label)
-            .unwrap_or("미확인 교역장");
+            .unwrap_or("Unknown Market");
         let trade_summary = format!(
-            "{} 님이 {} 흐름을 {}에서 조율합니다 (유동성 {:.1})",
+            "{} brokers {} flow at {} (liquidity {:.1})",
             actor.name, focus, market_label, currency
         );
 
@@ -141,16 +141,16 @@ pub fn event_generation_system(
                     Some(meta.tensions[rng.gen_range(0..meta.tensions.len())].to_string())
                 }
             })
-            .unwrap_or_else(|| "이야기 나눔".to_string());
+            .unwrap_or_else(|| "Story circle".to_string());
 
         let cohesion_level = if attributes.fame >= 60.0 {
-            "전설급 호응"
+            "Legendary crowd"
         } else if attributes.fame >= 35.0 {
-            "성황"
+            "Packed hall"
         } else if attributes.fame >= 15.0 {
-            "소박한 모임"
+            "Cozy group"
         } else {
-            "소수 친교"
+            "Small circle"
         }
         .to_string();
 
@@ -190,7 +190,7 @@ pub fn event_generation_system(
         let circulation_stage =
             circulation[(tick as usize + catalysts.len()) % circulation.len()].to_string();
 
-        let casualties = if stressor.contains("역병") || stressor.contains("질병") {
+        let casualties = if stressor.contains("plague") || stressor.contains("disease") {
             Some(rng.gen_range(5_000..80_000))
         } else {
             None
@@ -206,7 +206,7 @@ pub fn event_generation_system(
         }
 
         let impact = format!(
-            "{} 위기가 {}을(를) 압박하며 {} 단계가 진행 중입니다",
+            "{} is pressuring the world | Catalyst: {} | Phase {}",
             stressor, catalyst, circulation_stage
         );
 

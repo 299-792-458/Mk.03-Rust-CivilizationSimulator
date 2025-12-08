@@ -325,29 +325,29 @@ fn seasonal_effect_for(season: &str, tick: u64) -> observer::SeasonEffectSnapsho
     // Uses deterministic wave so tick speed affects intensity.
     let wave = ((tick % 32) as f32 / 32.0 * std::f32::consts::TAU).sin();
     match season {
-        "꽃피움 계절" => observer::SeasonEffectSnapshot {
-            label: "꽃가루 축제".to_string(),
+        "Flower Bloom" => observer::SeasonEffectSnapshot {
+            label: "Pollen Festival".to_string(),
             temperature: 0.2 + 0.1 * wave,
             morale_shift: 5.0,
             yield_shift: 3.0,
             risk_shift: -2.0,
         },
-        "불꽃 절정" => observer::SeasonEffectSnapshot {
-            label: "태양 쇄도".to_string(),
+        "Sunburst Peak" => observer::SeasonEffectSnapshot {
+            label: "Solar Surge".to_string(),
             temperature: 0.65 + 0.2 * wave,
             morale_shift: -3.0,
             yield_shift: 6.0,
             risk_shift: 4.0,
         },
-        "잿불 내림" => observer::SeasonEffectSnapshot {
-            label: "연기 어린 밤".to_string(),
+        "Ashfall" => observer::SeasonEffectSnapshot {
+            label: "Smoldering Night".to_string(),
             temperature: -0.15 + 0.1 * wave,
             morale_shift: -1.0,
             yield_shift: -2.0,
             risk_shift: 3.0,
         },
         _ => observer::SeasonEffectSnapshot {
-            label: "평온".to_string(),
+            label: "Calm".to_string(),
             temperature: 0.0,
             morale_shift: 0.0,
             yield_shift: 0.0,
@@ -441,7 +441,7 @@ fn seed_entities(world: &mut World) {
             world_meta.anchor_position(Biome::Market),
             Inventory {
                 items: vec![ItemStack {
-                    item: ItemKind::Resource("약초".into()),
+                    item: ItemKind::Resource("Herbs".into()),
                     quantity: 10,
                 }],
                 currency: 100.0,
@@ -474,7 +474,7 @@ fn seed_entities(world: &mut World) {
             world_meta.anchor_position(Biome::Forest),
             Inventory {
                 items: vec![ItemStack {
-                    item: ItemKind::Equipment("단검".into()),
+                    item: ItemKind::Equipment("Dagger".into()),
                     quantity: 1,
                 }],
                 currency: 45.0,
@@ -537,7 +537,7 @@ fn seed_entities(world: &mut World) {
             world_meta.anchor_position(Biome::Village),
             Inventory {
                 items: vec![ItemStack {
-                    item: ItemKind::Artifact("태양 성물함".into()),
+                    item: ItemKind::Artifact("Sun Relic".into()),
                     quantity: 1,
                 }],
                 currency: 30.0,

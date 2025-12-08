@@ -13,8 +13,8 @@ pub fn environment_system(
 ) {
     let season = meta.epoch_for_tick(time.tick).1;
     let (morale_shift, yield_shift, risk_shift) = match season {
-        "불꽃 절정" => (-4.0, 6.0, 5.0),
-        "잿불 내림" => (-2.0, -2.0, 4.0),
+        "Sunburst Peak" => (-4.0, 6.0, 5.0),
+        "Ashfall" => (-2.0, -2.0, 4.0),
         _ => (4.0, 3.0, -2.0),
     };
 

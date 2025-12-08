@@ -10,11 +10,11 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Resource, Serialize, Deserialize)]
 pub struct NationMetrics {
-    pub economy: f32,   // 경제
-    pub science: f32,   // 과학
-    pub culture: f32,   // 문화
-    pub diplomacy: f32, // 외교
-    pub religion: f32,  // 종교
+    pub economy: f32,   // Economy
+    pub science: f32,   // Science
+    pub culture: f32,   // Culture
+    pub diplomacy: f32, // Diplomacy
+    pub religion: f32,  // Religion
     pub military: f32,
     pub territory: f32,
     pub is_destroyed: bool,
@@ -162,7 +162,7 @@ pub struct SupplyState {
     pub history: Vec<(f32, f32, f32)>,
 }
 
-/// 전지구 생태/기후 상태
+/// Global Ecological/Climate State
 #[derive(Debug, Clone, Resource, Serialize, Deserialize)]
 pub struct ClimateState {
     pub carbon_ppm: f32,
@@ -194,7 +194,7 @@ impl Default for ClimateState {
     }
 }
 
-/// 우주 시대 진행도 추적.
+/// Space Age Progress Tracking.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum SpaceStage {
     Moon,
@@ -206,10 +206,10 @@ pub enum SpaceStage {
 impl SpaceStage {
     pub fn label(&self) -> &'static str {
         match self {
-            SpaceStage::Moon => "달",
-            SpaceStage::Mars => "화성",
-            SpaceStage::Jovian => "목성권",
-            SpaceStage::Interstellar => "성간",
+            SpaceStage::Moon => "Moon",
+            SpaceStage::Mars => "Mars",
+            SpaceStage::Jovian => "Jovian",
+            SpaceStage::Interstellar => "Interstellar",
         }
     }
 }
@@ -220,7 +220,7 @@ impl Default for SpaceStage {
     }
 }
 
-/// 과학/우주 승리 진행도 추적.
+/// Science/Space Victory Progress Tracking.
 #[derive(Debug, Clone, Resource, Serialize, Deserialize)]
 pub struct ScienceVictory {
     pub progress: HashMap<Nation, f32>,
@@ -242,7 +242,7 @@ pub struct ScienceVictory {
     pub moon_done: bool,
 }
 
-/// 우주/지질학 타임라인
+/// Cosmic/Geological Timeline
 #[derive(Debug, Clone, Resource, Serialize, Deserialize)]
 pub struct CosmicTimeline {
     pub timescale_years_per_tick: f64,
@@ -260,9 +260,9 @@ pub struct CivilizationalLedger {
 impl Default for CosmicTimeline {
     fn default() -> Self {
         Self {
-            timescale_years_per_tick: 1_000_000.0, // 1틱 = 100만년
+            timescale_years_per_tick: 1_000_000.0, // 1 tick = 1 million years
             cosmic_age_years: 0.0,
-            geologic_stage: "행성 형성".to_string(),
+            geologic_stage: "Planetary Formation".to_string(),
             extinction_events: 0,
         }
     }

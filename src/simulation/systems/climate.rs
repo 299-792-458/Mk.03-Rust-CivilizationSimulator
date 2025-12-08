@@ -17,11 +17,11 @@ pub fn climate_system(
 ) {
     // Baseline drift follows geologic stage and prosperity.
     let stage_factor = match cosmic.geologic_stage.as_str() {
-        "원시 지각" => 0.45,
-        "태고 해양" => 0.7,
-        "산소 폭발" => 1.0,
-        "캄브리아/대륙 분화" => 1.15,
-        "대멸종 순환" => 1.35,
+        "Primordial Crust" => 0.45,
+        "Ancient Ocean" => 0.7,
+        "Oxygen Bloom" => 1.0,
+        "Cambrian/Continental Split" => 1.15,
+        "Extinction Cycle" => 1.35,
         _ => 1.5,
     };
     let blast_total: u32 = blasts.0.values().map(|v| *v as u32).sum();
@@ -71,15 +71,15 @@ pub fn climate_system(
     if time.tick % 24 == 0 {
         log.push(WorldEvent {
             tick: time.tick,
-            epoch: "기후".to_string(),
-            season: "지구".to_string(),
+            epoch: "Climate".to_string(),
+            season: "Planet".to_string(),
             kind: WorldEventKind::MacroShock {
-                stressor: "기후 변동 경고".to_string(),
+                stressor: "Climate shift warning".to_string(),
                 catalyst: format!(
-                    "탄소 {:.0}ppm | 위험 {:.1}%",
+                    "Carbon {:.0}ppm | Risk {:.1}%",
                     climate.carbon_ppm, climate.climate_risk
                 ),
-                projected_impact: "생산성 저하·인구 피해 가능".to_string(),
+                projected_impact: "Productivity loss / population risk".to_string(),
                 casualties: None,
             },
         });

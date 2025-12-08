@@ -11,26 +11,26 @@ use crate::simulation::{
 
 fn season_trade_modifier(season: &str) -> f32 {
     match season {
-        "꽃피움 계절" => 1.1,
-        "불꽃 절정" => 1.0,
-        "잿불 내림" => 0.95,
+        "Flower Bloom" => 1.1,
+        "Sunburst Peak" => 1.0,
+        "Ashfall" => 0.95,
         _ => 1.0,
     }
 }
 
 fn season_gather_modifier(season: &str) -> f32 {
     match season {
-        "꽃피움 계절" => 1.25,
-        "불꽃 절정" => 1.05,
-        "잿불 내림" => 0.9,
+        "Flower Bloom" => 1.25,
+        "Sunburst Peak" => 1.05,
+        "Ashfall" => 0.9,
         _ => 1.0,
     }
 }
 
 fn segment_trade_modifier(segment: &str) -> f32 {
     match segment {
-        "한낮" => 1.2,
-        "해질녘" => 0.85,
+        "Midday" => 1.2,
+        "Dusk" => 0.85,
         _ => 1.0,
     }
 }

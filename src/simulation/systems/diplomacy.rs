@@ -47,21 +47,21 @@ pub fn diplomacy_system(
             diplo.alliances.push((a, b));
             log.push(WorldEvent {
                 tick: time.tick,
-                epoch: "외교".to_string(),
-                season: "동맹".to_string(),
+                epoch: "Diplomacy".to_string(),
+                season: "Alliance".to_string(),
                 kind: WorldEventKind::Social {
                     convener: crate::simulation::EventActor {
                         id: 0,
-                        name: format!("{}-{} 조약", a.name(), b.name()),
+                        name: format!("{}-{} Treaty", a.name(), b.name()),
                         nation: a,
                         faction: crate::simulation::Faction::Neutral,
-                        faction_label: "조약".to_string(),
+                        faction_label: "Treaty".to_string(),
                         biome: crate::simulation::Biome::Plains,
                         biome_label: "Plains".to_string(),
                         behavior_hint: crate::simulation::BehaviorState::Idle,
                         behavior_hint_label: "Treaty".to_string(),
                     },
-                    gathering_theme: "동맹 체결".to_string(),
+                    gathering_theme: "Alliance signed".to_string(),
                     cohesion_level: format!("score {:.0}", score),
                 },
             });
@@ -70,12 +70,12 @@ pub fn diplomacy_system(
             diplo.sanctions.push((a, b));
             log.push(WorldEvent {
                 tick: time.tick,
-                epoch: "외교".to_string(),
-                season: "제재".to_string(),
+                epoch: "Diplomacy".to_string(),
+                season: "Sanction".to_string(),
                 kind: WorldEventKind::MacroShock {
-                    stressor: format!("{}가 {}를 제재", a.name(), b.name()),
-                    catalyst: "무역 차단".to_string(),
-                    projected_impact: "경제 위축".to_string(),
+                    stressor: format!("{} sanctions {}", a.name(), b.name()),
+                    catalyst: "Trade blockade".to_string(),
+                    projected_impact: "Economic contraction".to_string(),
                     casualties: None,
                 },
             });
