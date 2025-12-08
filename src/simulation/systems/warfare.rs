@@ -1,5 +1,5 @@
 use crate::simulation::{
-    AllNationCivState, AllNationMetrics, Hex, Nation, WeaponTier, WorldTime,
+    AllNationCivState, AllNationMetrics, DiplomaticRelations, Hex, Nation, WeaponTier, WorldTime,
     components::{Combatants, InCombat},
     grid::AxialCoord,
 };
@@ -30,6 +30,14 @@ fn apply_war_science_penalty(metrics: &mut crate::simulation::NationMetrics, cas
     metrics.culture = (metrics.culture - casualty_ratio * 6.0).max(0.0);
 }
 
+fn ordered_pair(a: Nation, b: Nation) -> (Nation, Nation) {
+    if (a as u32) < (b as u32) {
+        (a, b)
+    } else {
+        (b, a)
+    }
+}
+
 // System to clean up finished combat encounters
 pub fn combat_cleanup_system(mut commands: Commands, mut query: Query<(Entity, &mut InCombat)>) {
     for (entity, mut in_combat) in query.iter_mut() {
@@ -50,6 +58,7 @@ pub fn warfare_system(
     mut event_log: ResMut<crate::simulation::WorldEventLog>,
     world_meta: Res<crate::simulation::WorldMetadata>,
     science_victory: Res<crate::simulation::ScienceVictory>,
+    diplo: Res<DiplomaticRelations>,
     hex_query: Query<(Entity, &Hex, &AxialCoord)>,
 ) {
     if science_victory.finished {
@@ -57,6 +66,7 @@ pub fn warfare_system(
     }
     let mut rng = SmallRng::seed_from_u64(time.tick.wrapping_mul(257));
     let mut battle_requests = Vec::new();
+    let mut seen_pairs = HashSet::new();
 
     // 1. Identify potential battles
     let nations: Vec<Nation> = all_metrics.0.keys().cloned().collect();
@@ -88,13 +98,59 @@ pub fn warfare_system(
             let war_prob = (0.2 - peace_factor * 0.001).max(0.01);
 
             if rng.gen_bool(war_prob as f64) {
-                battle_requests.push(BattleRequest {
-                    nation_a: nation_a_key,
-                    nation_b: nation_b_key,
-                });
+                let pair = ordered_pair(nation_a_key, nation_b_key);
+                if seen_pairs.insert(pair) {
+                    battle_requests.push(BattleRequest {
+                        nation_a: nation_a_key,
+                        nation_b: nation_b_key,
+                    });
+                }
             }
         }
     }
+
+    // Alliance auto-join: allied nations can be pulled into existing battles.
+    let alliances = &diplo.alliances;
+    let mut extra_requests = Vec::new();
+    for req in &battle_requests {
+        for (ally_a, ally_b) in alliances {
+            if req.nation_a == *ally_a && req.nation_b != *ally_b {
+                let pair = ordered_pair(*ally_b, req.nation_b);
+                if seen_pairs.insert(pair) {
+                    extra_requests.push(BattleRequest {
+                        nation_a: *ally_b,
+                        nation_b: req.nation_b,
+                    });
+                }
+            } else if req.nation_a == *ally_b && req.nation_b != *ally_a {
+                let pair = ordered_pair(*ally_a, req.nation_b);
+                if seen_pairs.insert(pair) {
+                    extra_requests.push(BattleRequest {
+                        nation_a: *ally_a,
+                        nation_b: req.nation_b,
+                    });
+                }
+            }
+            if req.nation_b == *ally_a && req.nation_a != *ally_b {
+                let pair = ordered_pair(req.nation_a, *ally_b);
+                if seen_pairs.insert(pair) {
+                    extra_requests.push(BattleRequest {
+                        nation_a: req.nation_a,
+                        nation_b: *ally_b,
+                    });
+                }
+            } else if req.nation_b == *ally_b && req.nation_a != *ally_a {
+                let pair = ordered_pair(req.nation_a, *ally_a);
+                if seen_pairs.insert(pair) {
+                    extra_requests.push(BattleRequest {
+                        nation_a: req.nation_a,
+                        nation_b: *ally_a,
+                    });
+                }
+            }
+        }
+    }
+    battle_requests.extend(extra_requests);
 
     let (epoch, season) = world_meta.epoch_for_tick(time.tick);
     let nation_hexes: HashMap<Nation, HashSet<AxialCoord>> = {

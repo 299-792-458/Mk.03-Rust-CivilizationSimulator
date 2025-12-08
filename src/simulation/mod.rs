@@ -94,6 +94,7 @@ impl SimulationWorld {
                 climate_impact_system,
                 flood_system,
                 supply_chain_system,
+                supply_impact_system,
                 bloc_system,
                 war_fatigue_system,
                 territory_system,

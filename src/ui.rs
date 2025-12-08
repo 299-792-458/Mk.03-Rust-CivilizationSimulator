@@ -21,6 +21,7 @@ pub struct ControlState {
     pub log_filter: LogFilter,
     pub pinned_nation: Option<Nation>,
     pub log_pin_selected: bool,
+    pub focus_mode: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -72,6 +73,7 @@ pub enum LogFilter {
     War,
     TradeSocial,
     ScienceSpace,
+    Diplomacy,
 }
 
 impl LogFilter {
@@ -81,6 +83,7 @@ impl LogFilter {
             LogFilter::War => "전쟁",
             LogFilter::TradeSocial => "무역/사회",
             LogFilter::ScienceSpace => "과학/우주",
+            LogFilter::Diplomacy => "외교",
         }
     }
 
@@ -89,7 +92,8 @@ impl LogFilter {
             LogFilter::All => LogFilter::War,
             LogFilter::War => LogFilter::TradeSocial,
             LogFilter::TradeSocial => LogFilter::ScienceSpace,
-            LogFilter::ScienceSpace => LogFilter::All,
+            LogFilter::ScienceSpace => LogFilter::Diplomacy,
+            LogFilter::Diplomacy => LogFilter::All,
         }
     }
 }
@@ -259,6 +263,10 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         snapshot,
         overlay: control.map_overlay,
         selected_hex: control.selected_hex,
+        focus: control
+            .focus_mode
+            .then(|| control.pinned_nation.or(control.selected_owner))
+            .flatten(),
     };
     frame.render_widget(map_widget, top_layout[1]);
 
@@ -353,6 +361,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
                 }
             };
 
+            let pinned_hit = control
+                .pinned_nation
+                .map(|p| event_involves(event, p))
+                .unwrap_or(false);
+
             let (actor, details, impact) = match &event.kind {
                 WorldEventKind::Trade {
                     actor,
@@ -443,7 +456,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
                 Cell::from(impact),
             ];
 
-            Row::new(cells).height(1).style(style)
+            let mut row_style = style;
+            if pinned_hit {
+                row_style = row_style.bold().fg(Color::White);
+            }
+            Row::new(cells).height(1).style(row_style)
         })
         .collect();
 
@@ -574,6 +591,14 @@ fn render_control_deck(
                     .unwrap_or_else(|| "없음".to_string()),
                 Style::default().fg(Color::Magenta),
             ),
+            Span::raw(" · 포커스 "),
+            Span::styled(
+                control
+                    .selected_owner
+                    .map(|n| n.name().to_string())
+                    .unwrap_or_else(|| "없음".to_string()),
+                Style::default().fg(Color::LightGreen),
+            ),
         ]),
         Line::from(format!(
             "Stage {} | 멸종 {} | Hex {} | Entities {}",
@@ -602,7 +627,9 @@ fn render_control_deck(
             Span::styled("G", Style::default().fg(Color::Magenta)),
             Span::raw(" 핀 on/off  "),
             Span::styled("C", Style::default().fg(Color::LightCyan)),
-            Span::raw(" 선택 핀"),
+            Span::raw(" 선택 핀  "),
+            Span::styled("V", Style::default().fg(Color::LightGreen)),
+            Span::raw(" Focus 토글"),
         ]),
         Line::from("마우스: 좌측 상단 [-][+][R] 터미널 버튼도 사용 가능"),
     ];
@@ -716,6 +743,11 @@ fn render_control_deck(
                     .sum::<f32>()
                     / snapshot.diplomacy.trust.len().max(1) as f32
             )),
+            Span::raw(if control.focus_mode {
+                " · Focus 모드"
+            } else {
+                ""
+            }),
         ]),
     ];
     let legend = Paragraph::new(legend_lines)
@@ -978,6 +1010,11 @@ fn render_world_state_panel(
             let nation_color = nation.color();
             let is_selected = control.selected_owner == Some(nation);
             let mut nation_lines = vec![];
+            let pin_label = if control.pinned_nation == Some(nation) {
+                " [PIN]"
+            } else {
+                ""
+            };
             nation_lines.push(Line::from(Span::styled(
                 nation.name(),
                 Style::default()
@@ -990,6 +1027,12 @@ fn render_world_state_panel(
                         Color::Reset
                     }),
             )));
+            if !pin_label.is_empty() {
+                nation_lines.push(Line::from(Span::styled(
+                    pin_label,
+                    Style::default().fg(Color::LightCyan).bold(),
+                )));
+            }
             // Diplomacy/ideology quick stats
             let trust = snapshot
                 .diplomacy
@@ -1592,6 +1635,7 @@ struct MapWidget<'a> {
     snapshot: &'a ObserverSnapshot,
     overlay: MapOverlay,
     selected_hex: Option<AxialCoord>,
+    focus: Option<Nation>,
 }
 
 impl<'a> Widget for MapWidget<'a> {
@@ -1716,6 +1760,9 @@ impl<'a> Widget for MapWidget<'a> {
             let mut style = Style::default().fg(hex.owner.color());
             if Some(hex.owner) == leader {
                 style = style.bold();
+            }
+            if Some(hex.owner) == self.focus {
+                style = style.bg(Color::Rgb(30, 30, 60)).fg(Color::White).bold();
             }
             let glyph = if self.selected_hex == Some(coord) {
                 "◎"
@@ -1852,6 +1899,12 @@ fn filter_event(
                 | WorldEventKind::ScienceVictory { .. }
                 | WorldEventKind::InterstellarProgress { .. }
                 | WorldEventKind::InterstellarVictory { .. }
+        ),
+        LogFilter::Diplomacy => matches!(
+            event.kind,
+            WorldEventKind::EraShift { .. }
+                | WorldEventKind::MacroShock { .. }
+                | WorldEventKind::Social { .. }
         ),
     };
     if !passes {

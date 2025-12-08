@@ -51,3 +51,27 @@ pub fn supply_chain_system(
         supply.history.drain(0..excess);
     }
 }
+
+/// Applies supply deficits to nation metrics and civ state.
+pub fn supply_impact_system(
+    supply: Res<SupplyState>,
+    mut metrics: ResMut<AllNationMetrics>,
+    mut civ: ResMut<crate::simulation::AllNationCivState>,
+) {
+    if supply.deficit_ticks == 0 {
+        return;
+    }
+    let deficit_strength = (supply.deficit_ticks as f32 * 0.05).min(1.0);
+    for (nation, m) in metrics.0.iter_mut() {
+        if m.is_destroyed {
+            continue;
+        }
+        m.economy = (m.economy * (1.0 - 0.02 * deficit_strength)).max(5.0);
+        m.population = (m.population as f32 * (1.0 - 0.001 * deficit_strength)).max(5_000.0) as u64;
+        m.military = (m.military * (1.0 - 0.015 * deficit_strength)).max(5.0);
+        if let Some(cstate) = civ.0.get_mut(nation) {
+            cstate.happiness = (cstate.happiness - 1.5 * deficit_strength).max(0.0);
+            cstate.production = (cstate.production * (1.0 - 0.01 * deficit_strength)).max(0.0);
+        }
+    }
+}

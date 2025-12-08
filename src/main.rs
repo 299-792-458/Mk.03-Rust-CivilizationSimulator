@@ -86,6 +86,7 @@ async fn main() -> anyhow::Result<()> {
     let mut log_filter = ui::LogFilter::All;
     let mut pinned_nation: Option<simulation::Nation> = None;
     let mut log_pin_selected = false;
+    let mut focus_mode = false;
 
     let observer = Arc::new(RwLock::new(ObserverSnapshot::default()));
     let shutdown_notify = Arc::new(Notify::new());
@@ -157,6 +158,7 @@ async fn main() -> anyhow::Result<()> {
             log_filter,
             pinned_nation,
             log_pin_selected,
+            focus_mode,
         };
 
         terminal.draw(|frame| {
@@ -236,6 +238,9 @@ async fn main() -> anyhow::Result<()> {
                     }
                     KeyCode::Char('c') | KeyCode::Char('C') => {
                         pinned_nation = selected_owner.or(pinned_nation);
+                    }
+                    KeyCode::Char('v') | KeyCode::Char('V') => {
+                        focus_mode = !focus_mode;
                     }
                     _ => {}
                 },
