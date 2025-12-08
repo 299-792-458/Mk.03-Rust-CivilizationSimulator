@@ -1,5 +1,5 @@
 use crate::simulation::events::WorldEventKind;
-use crate::simulation::{ObserverSnapshot, format_number_commas};
+use crate::simulation::{AxialCoord, Nation, ObserverSnapshot, format_number_commas};
 use ratatui::{
     prelude::*,
     style::Stylize,
@@ -15,6 +15,10 @@ pub struct ControlState {
     pub tick_duration: Duration,
     pub years_per_tick: f64,
     pub preset_status: Vec<PresetStatus>,
+    pub map_overlay: MapOverlay,
+    pub selected_hex: Option<AxialCoord>,
+    pub selected_owner: Option<Nation>,
+    pub log_filter: LogFilter,
 }
 
 #[derive(Debug, Clone)]
@@ -25,6 +29,67 @@ pub struct PresetStatus {
     pub tick_ms: u64,
     pub years_per_tick: f64,
     pub active: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MapOverlay {
+    Ownership,
+    Climate,
+    Conflict,
+}
+
+impl MapOverlay {
+    pub fn label(&self) -> &'static str {
+        match self {
+            MapOverlay::Ownership => "영토/선두",
+            MapOverlay::Climate => "기후/해수",
+            MapOverlay::Conflict => "전선/피로",
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            MapOverlay::Ownership => MapOverlay::Climate,
+            MapOverlay::Climate => MapOverlay::Conflict,
+            MapOverlay::Conflict => MapOverlay::Ownership,
+        }
+    }
+
+    pub fn prev(self) -> Self {
+        match self {
+            MapOverlay::Ownership => MapOverlay::Conflict,
+            MapOverlay::Climate => MapOverlay::Ownership,
+            MapOverlay::Conflict => MapOverlay::Climate,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogFilter {
+    All,
+    War,
+    TradeSocial,
+    ScienceSpace,
+}
+
+impl LogFilter {
+    pub fn label(&self) -> &'static str {
+        match self {
+            LogFilter::All => "전체",
+            LogFilter::War => "전쟁",
+            LogFilter::TradeSocial => "무역/사회",
+            LogFilter::ScienceSpace => "과학/우주",
+        }
+    }
+
+    pub fn next(self) -> Self {
+        match self {
+            LogFilter::All => LogFilter::War,
+            LogFilter::War => LogFilter::TradeSocial,
+            LogFilter::TradeSocial => LogFilter::ScienceSpace,
+            LogFilter::ScienceSpace => LogFilter::All,
+        }
+    }
 }
 
 const WORLD_ATLAS: &str = r#"
@@ -63,7 +128,8 @@ const WORLD_ATLAS: &str = r#"
 ............................................................................................................................
 "#;
 
-pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlState) {
+/// Renders UI and returns the map area used for click mapping.
+pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlState) -> Rect {
     // Main layout
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
@@ -172,7 +238,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     render_world_state_panel(frame, top_layout[0], snapshot, control);
 
     // Map Widget
-    let map_widget = MapWidget { snapshot };
+    let map_widget = MapWidget {
+        snapshot,
+        overlay: control.map_overlay,
+        selected_hex: control.selected_hex,
+    };
     frame.render_widget(map_widget, top_layout[1]);
 
     // Event Log Panel - Using a Table for alignment
@@ -192,6 +262,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         .events
         .iter()
         .rev()
+        .filter(|e| filter_event(e, control.log_filter))
         .take(20)
         .map(|event| {
             let (nation_cell, style) = match &event.kind {
@@ -370,11 +441,17 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
 
     let event_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(5), Constraint::Min(0)])
+        .constraints([
+            Constraint::Length(3),
+            Constraint::Length(5),
+            Constraint::Min(0),
+        ])
         .split(content_layout[1]);
 
-    render_event_leaderboard(frame, event_layout[0], snapshot);
-    frame.render_widget(table, event_layout[1]);
+    render_diagnostics_strip(frame, event_layout[0], snapshot, control);
+    render_event_leaderboard(frame, event_layout[1], snapshot);
+    frame.render_widget(table, event_layout[2]);
+    top_layout[1]
 }
 
 fn render_control_deck(
@@ -430,6 +507,24 @@ fn render_control_deck(
             Span::raw(" · Preset "),
             Span::styled(active_preset, Style::default().fg(Color::Magenta)),
         ]),
+        Line::from(vec![
+            Span::styled("Map ", Style::default().fg(Color::White)),
+            Span::styled(
+                control.map_overlay.label(),
+                Style::default().fg(Color::LightCyan).bold(),
+            ),
+            Span::raw(" · Overlay [ ] cycle"),
+            Span::raw(" · Climate "),
+            Span::styled(
+                format!(
+                    "{:.0}ppm | 위험 {:.1}% | 생물다양성 {:.1}",
+                    snapshot.science_victory.carbon_ppm,
+                    snapshot.science_victory.climate_risk,
+                    snapshot.science_victory.biodiversity
+                ),
+                Style::default().fg(Color::Gray),
+            ),
+        ]),
         Line::from(format!(
             "Stage {} | 멸종 {} | Hex {} | Entities {}",
             snapshot.geologic_stage,
@@ -449,7 +544,9 @@ fn render_control_deck(
             Span::styled("R", Style::default().fg(Color::LightYellow)),
             Span::raw(" 리셋  "),
             Span::styled("Q", Style::default().fg(Color::Red)),
-            Span::raw(" 종료"),
+            Span::raw(" 종료  "),
+            Span::styled("[ ]", Style::default().fg(Color::LightCyan)),
+            Span::raw(" 지도 모드"),
         ]),
         Line::from("마우스: 좌측 상단 [-][+][R] 터미널 버튼도 사용 가능"),
     ];
@@ -510,13 +607,45 @@ fn render_control_deck(
             Span::styled("지도", Style::default().fg(Color::White).bold()),
             Span::raw(" ◆ 선두국 | █ 영토 | ✸ 전선 | ◎ 핵 "),
         ]),
-        Line::from("≈ 해수 | ░ 빙선 | 색: 계절 틴트"),
+        Line::from(vec![
+            Span::raw("≈ 해수 | ░ 빙선 | 모드 "),
+            Span::styled(
+                control.map_overlay.label(),
+                Style::default().fg(Color::Cyan).bold(),
+            ),
+            Span::raw("  [ [ ] ] 전환"),
+        ]),
         Line::from(format!(
             "해수면 {:.0}% | 빙선 {:.0}% | 전선 {}",
             snapshot.overlay.sea_level * 100.0,
             snapshot.overlay.ice_line * 100.0,
             snapshot.combat_hexes.len()
         )),
+        Line::from(match control.selected_owner {
+            Some(nation) => format!(
+                "선택 헥스: {} | 전선 {} | 핵 {}",
+                nation.name(),
+                if control
+                    .selected_hex
+                    .map(|c| snapshot.combat_hexes.contains(&c))
+                    .unwrap_or(false)
+                {
+                    "예"
+                } else {
+                    "없음"
+                },
+                if control
+                    .selected_hex
+                    .map(|c| snapshot.nuclear_hexes.contains(&c))
+                    .unwrap_or(false)
+                {
+                    "예"
+                } else {
+                    "없음"
+                }
+            ),
+            None => "선택 헥스 없음".to_string(),
+        }),
     ];
     let legend = Paragraph::new(legend_lines)
         .block(
@@ -735,7 +864,11 @@ fn render_world_state_panel(
     render_war_theater_panel(frame, panel_layout[4], snapshot);
 
     let mut nations: Vec<_> = snapshot.all_metrics.0.keys().copied().collect();
-    nations.sort_by_key(|a| a.name());
+    if let Some(selected) = control.selected_owner {
+        nations.sort_by_key(|n| if *n == selected { 0 } else { 1 });
+    } else {
+        nations.sort_by_key(|a| a.name());
+    }
 
     let nations_len = nations.len().max(1) as u32;
     let constraints: Vec<Constraint> = (0..nations.len())
@@ -753,10 +886,19 @@ fn render_world_state_panel(
 
         if let Some(metrics) = snapshot.all_metrics.0.get(&nation) {
             let nation_color = nation.color();
+            let is_selected = control.selected_owner == Some(nation);
             let mut nation_lines = vec![];
             nation_lines.push(Line::from(Span::styled(
                 nation.name(),
-                Style::default().bold().underlined().fg(nation_color),
+                Style::default()
+                    .bold()
+                    .underlined()
+                    .fg(nation_color)
+                    .bg(if is_selected {
+                        Color::Rgb(30, 30, 60)
+                    } else {
+                        Color::Reset
+                    }),
             )));
 
             nation_lines.push(Line::from(Span::styled(
@@ -852,6 +994,13 @@ fn render_world_state_panel(
         control.tick_duration.as_millis(),
         control.years_per_tick
     )));
+    let ms = control.tick_duration.as_millis() as f32;
+    let slider_pos = (ms.log10() / 4.0).clamp(0.0, 1.0);
+    let slider_width = 20;
+    let filled = (slider_pos * slider_width as f32).round() as usize;
+    let mut bar = "━".repeat(filled.min(slider_width));
+    bar.push_str(&"─".repeat(slider_width.saturating_sub(filled)));
+    speed_lines.push(Line::from(format!("[{}] pace", bar)));
     speed_lines.push(Line::from(vec![
         Span::from("["),
         Span::styled("-", Style::default().fg(Color::Red).bold()),
@@ -1308,6 +1457,8 @@ fn render_war_theater_panel(frame: &mut Frame, area: Rect, snapshot: &ObserverSn
 
 struct MapWidget<'a> {
     snapshot: &'a ObserverSnapshot,
+    overlay: MapOverlay,
+    selected_hex: Option<AxialCoord>,
 }
 
 impl<'a> Widget for MapWidget<'a> {
@@ -1346,16 +1497,55 @@ impl<'a> Widget for MapWidget<'a> {
                     Color::Rgb(70, 110, 160)
                 };
 
-                // Sea level overlay
+                // Sea/ice overlays respond to climate view too.
                 let norm_y = y as f32 / area.height as f32;
-                if !is_land && norm_y > self.snapshot.overlay.sea_level {
-                    base_char = "≈";
-                    color = Color::Rgb(50, 90, 140);
-                }
-                // Ice line overlay
-                if norm_y < self.snapshot.overlay.ice_line {
-                    base_char = "░";
-                    color = Color::White;
+                let sea_level = self.snapshot.overlay.sea_level;
+                let ice_line = self.snapshot.overlay.ice_line;
+
+                match self.overlay {
+                    MapOverlay::Ownership => {
+                        if !is_land && norm_y > sea_level {
+                            base_char = "≈";
+                            color = Color::Rgb(50, 90, 140);
+                        }
+                        if norm_y < ice_line {
+                            base_char = "░";
+                            color = Color::White;
+                        }
+                    }
+                    MapOverlay::Climate => {
+                        // Heatmap from carbon/climate risk
+                        let risk =
+                            (self.snapshot.science_victory.climate_risk / 140.0).clamp(0.0, 1.0);
+                        let heat = (risk * 255.0).round().clamp(0.0, 255.0) as u8;
+                        let green = (180.0 - risk * 120.0).max(20.0).min(255.0) as u8;
+                        let cool = (150.0 - risk * 120.0).max(30.0).min(255.0) as u8;
+                        color = if is_land {
+                            Color::Rgb(heat, green, cool)
+                        } else {
+                            Color::Rgb(40, 100, 180)
+                        };
+                        if norm_y > sea_level {
+                            base_char = "≈";
+                            color = Color::Rgb(30, 80, 140);
+                        }
+                        if norm_y < ice_line {
+                            base_char = "░";
+                            color = Color::White;
+                        }
+                    }
+                    MapOverlay::Conflict => {
+                        // War fatigue tint + flashing fronts
+                        let fatigue_norm =
+                            (self.snapshot.overlay.war_fatigue / 100.0).clamp(0.0, 1.2);
+                        let red = (120.0 + fatigue_norm * 100.0).min(255.0) as u8;
+                        let green = (120.0 - fatigue_norm * 60.0).max(20.0) as u8;
+                        color = Color::Rgb(red, green, 60);
+                        if !is_land {
+                            base_char = "·";
+                            color = Color::Rgb(60, 90, 120);
+                        }
+                    }
                 }
 
                 // Dynamic accents
@@ -1394,7 +1584,9 @@ impl<'a> Widget for MapWidget<'a> {
             if Some(hex.owner) == leader {
                 style = style.bold();
             }
-            let glyph = if Some(hex.owner) == leader {
+            let glyph = if self.selected_hex == Some(coord) {
+                "◎"
+            } else if Some(hex.owner) == leader {
                 "◆"
             } else {
                 "█"
@@ -1414,10 +1606,15 @@ impl<'a> Widget for MapWidget<'a> {
                 continue;
             }
             if self.snapshot.nuclear_hexes.contains(&coord) {
+                let glyph = if self.selected_hex == Some(coord) {
+                    "◎"
+                } else {
+                    "◎"
+                };
                 buf.set_string(
                     screen_x as u16,
                     screen_y as u16,
-                    "◎",
+                    glyph,
                     Style::default().fg(Color::Yellow).bg(Color::Red),
                 );
             } else if self.snapshot.combat_hexes.contains(&coord) {
@@ -1426,7 +1623,12 @@ impl<'a> Widget for MapWidget<'a> {
                 } else {
                     Style::default().fg(Color::Red)
                 };
-                buf.set_string(screen_x as u16, screen_y as u16, "✸", style);
+                let glyph = if self.selected_hex == Some(coord) {
+                    "◎"
+                } else {
+                    "✸"
+                };
+                buf.set_string(screen_x as u16, screen_y as u16, glyph, style);
             }
         }
     }
@@ -1497,6 +1699,91 @@ fn build_sentiment_series(snapshot: &ObserverSnapshot, buckets: usize, last_tick
         .collect();
     ensure_nonempty(&mut shifted);
     shifted
+}
+
+fn filter_event(event: &crate::simulation::WorldEvent, filter: LogFilter) -> bool {
+    match filter {
+        LogFilter::All => true,
+        LogFilter::War => matches!(event.kind, WorldEventKind::Warfare { .. }),
+        LogFilter::TradeSocial => matches!(
+            event.kind,
+            WorldEventKind::Trade { .. } | WorldEventKind::Social { .. }
+        ),
+        LogFilter::ScienceSpace => matches!(
+            event.kind,
+            WorldEventKind::ScienceProgress { .. }
+                | WorldEventKind::ScienceVictory { .. }
+                | WorldEventKind::InterstellarProgress { .. }
+                | WorldEventKind::InterstellarVictory { .. }
+        ),
+    }
+}
+
+fn render_diagnostics_strip(
+    frame: &mut Frame,
+    area: Rect,
+    snapshot: &ObserverSnapshot,
+    control: &ControlState,
+) {
+    let war_delta = snapshot
+        .overlay
+        .war_fatigue_history
+        .iter()
+        .rev()
+        .take(2)
+        .collect::<Vec<_>>();
+    let war_trend = if war_delta.len() == 2 {
+        war_delta[0] - war_delta[1]
+    } else {
+        0.0
+    };
+    let carbon_delta = snapshot
+        .overlay
+        .carbon_history
+        .iter()
+        .rev()
+        .take(2)
+        .collect::<Vec<_>>();
+    let carbon_trend = if carbon_delta.len() == 2 {
+        carbon_delta[0] - carbon_delta[1]
+    } else {
+        0.0
+    };
+    let pop_delta = snapshot
+        .science_victory
+        .population_history
+        .iter()
+        .rev()
+        .take(2)
+        .collect::<Vec<_>>();
+    let pop_trend = if pop_delta.len() == 2 {
+        (*pop_delta[0] as i64 - *pop_delta[1] as i64) as f32
+    } else {
+        0.0
+    };
+
+    let lines = vec![Line::from(vec![
+        Span::styled(
+            format!("로그 필터: {}", control.log_filter.label()),
+            Style::default().fg(Color::Cyan).bold(),
+        ),
+        Span::raw(" · 전쟁 피로 Δ "),
+        Span::styled(
+            format!("{:+.2}", war_trend),
+            Style::default().fg(Color::Red),
+        ),
+        Span::raw(" · 탄소 Δ "),
+        Span::styled(
+            format!("{:+.1}", carbon_trend),
+            Style::default().fg(Color::Yellow),
+        ),
+        Span::raw(" · 인구 Δ "),
+        Span::styled(
+            format_number_commas(pop_trend.max(0.0) as u64),
+            Style::default().fg(Color::Green),
+        ),
+    ])];
+    frame.render_widget(Paragraph::new(lines), area);
 }
 
 fn ensure_nonempty(series: &mut Vec<u64>) {

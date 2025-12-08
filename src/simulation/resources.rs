@@ -122,8 +122,37 @@ pub struct WorldRichness {
     pub history: Vec<f32>,
 }
 
-/// 전지구 생태/기후 상태
 #[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct IdeologyMatrix {
+    /// Per-nation ideology leaning (0 = traditionalist, 100 = progressive)
+    pub leaning: HashMap<Nation, f32>,
+    /// Cultural cohesion (0..100) representing how tightly narratives bind.
+    pub cohesion: HashMap<Nation, f32>,
+    /// Volatility score (0..100) that raises rebellion risk.
+    pub volatility: HashMap<Nation, f32>,
+}
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct DiplomaticRelations {
+    /// Symmetric relationship score (-100..100)
+    pub relations: HashMap<(Nation, Nation), f32>,
+    /// Alliances (unordered pairs)
+    pub alliances: Vec<(Nation, Nation)>,
+    /// Sanctions (ordered: issuer -> target)
+    pub sanctions: Vec<(Nation, Nation)>,
+    /// Trust/fear meters
+    pub trust: HashMap<Nation, f32>,
+    pub fear: HashMap<Nation, f32>,
+}
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct CivilizationalCycles {
+    pub golden_age: HashMap<Nation, f32>,
+    pub decline: HashMap<Nation, f32>,
+}
+
+/// 전지구 생태/기후 상태
+#[derive(Debug, Clone, Resource, Serialize, Deserialize)]
 pub struct ClimateState {
     pub carbon_ppm: f32,
     pub climate_risk: f32,
@@ -133,6 +162,25 @@ pub struct ClimateState {
     pub biodiversity_history: Vec<f32>,
     pub sea_level: f32, // 0..1
     pub ice_line: f32,  // 0..1 from top
+}
+
+impl Default for ClimateState {
+    fn default() -> Self {
+        // Start from a livable baseline so early ticks have meaningful signals.
+        let carbon_ppm = 320.0;
+        let climate_risk = 6.0;
+        let biodiversity = 85.0;
+        Self {
+            carbon_ppm,
+            climate_risk,
+            biodiversity,
+            carbon_history: vec![carbon_ppm],
+            climate_risk_history: vec![climate_risk],
+            biodiversity_history: vec![biodiversity],
+            sea_level: 0.08,
+            ice_line: 0.30,
+        }
+    }
 }
 
 /// 우주 시대 진행도 추적.

@@ -14,8 +14,8 @@ use tokio::sync::{Notify, watch};
 mod simulation;
 mod ui;
 
-use simulation::{ObserverSnapshot, SimulationConfig, SimulationWorld};
-use ui::{ControlState, PresetStatus};
+use simulation::{AxialCoord, ObserverSnapshot, SimulationConfig, SimulationWorld};
+use ui::{ControlState, MapOverlay, PresetStatus};
 
 #[derive(Clone, Copy)]
 struct SpeedPreset {
@@ -79,6 +79,11 @@ async fn main() -> anyhow::Result<()> {
     let (timescale_tx, mut timescale_rx) = watch::channel(initial_years_per_tick);
     let (pause_tx, mut pause_rx) = watch::channel(false);
     let mut active_preset: Option<char> = Some('2');
+    let mut map_overlay = MapOverlay::Ownership;
+    let mut selected_hex: Option<simulation::AxialCoord> = None;
+    let mut selected_owner: Option<simulation::Nation> = None;
+    let mut last_map_area = ratatui::prelude::Rect::default();
+    let mut log_filter = ui::LogFilter::All;
 
     let observer = Arc::new(RwLock::new(ObserverSnapshot::default()));
     let shutdown_notify = Arc::new(Notify::new());
@@ -144,11 +149,16 @@ async fn main() -> anyhow::Result<()> {
             tick_duration: *tick_duration_tx.borrow(),
             years_per_tick: *timescale_tx.borrow(),
             preset_status: preset_status(active_preset),
+            map_overlay,
+            selected_hex,
+            selected_owner,
+            log_filter,
         };
 
         terminal.draw(|frame| {
             let snapshot = observer.read().expect("Observer lock is poisoned").clone();
-            ui::render(frame, &snapshot, &control_state);
+            // Track map area for click mapping.
+            last_map_area = ui::render(frame, &snapshot, &control_state);
         })?;
 
         if event::poll(Duration::from_millis(100))? {
@@ -205,33 +215,57 @@ async fn main() -> anyhow::Result<()> {
                         timescale_tx.send(initial_years_per_tick).ok();
                         pause_tx.send(false).ok();
                     }
+                    KeyCode::Char('[') => {
+                        map_overlay = map_overlay.prev();
+                    }
+                    KeyCode::Char(']') => {
+                        map_overlay = map_overlay.next();
+                    }
+                    KeyCode::Char('f') | KeyCode::Char('F') => {
+                        log_filter = log_filter.next();
+                    }
                     _ => {}
                 },
                 Event::Mouse(mouse) => {
                     if mouse.kind == event::MouseEventKind::Down(event::MouseButton::Left) {
-                        // These coordinates are hardcoded based on the UI layout
-                        // A more robust solution would calculate them dynamically
-                        let button_y = 15; // Approximate line number for the buttons
-                        if mouse.row == button_y {
-                            if (1..=3).contains(&mouse.column) {
-                                // [-]
-                                let current_duration = *tick_duration_tx.borrow();
-                                let new_duration = current_duration * 2;
-                                active_preset = None;
-                                tick_duration_tx.send(new_duration).ok();
-                            } else if (5..=7).contains(&mouse.column) {
-                                // [+]
-                                let current_duration = *tick_duration_tx.borrow();
-                                let new_duration =
-                                    (current_duration / 2).max(Duration::from_millis(1));
-                                active_preset = None;
-                                tick_duration_tx.send(new_duration).ok();
-                            } else if (9..=11).contains(&mouse.column) {
-                                // [R]
-                                active_preset = Some('2');
-                                tick_duration_tx.send(initial_tick_duration).ok();
-                                timescale_tx.send(initial_years_per_tick).ok();
-                                pause_tx.send(false).ok();
+                        if point_in_rect(mouse.column, mouse.row, last_map_area) {
+                            if let Some(coord) =
+                                screen_to_axial(last_map_area, mouse.column, mouse.row)
+                            {
+                                if let Ok(snapshot) = observer.read() {
+                                    if let Some(hex) = snapshot.grid.hexes.get(&coord) {
+                                        selected_hex = Some(coord);
+                                        selected_owner = Some(hex.owner);
+                                    } else {
+                                        selected_hex = None;
+                                        selected_owner = None;
+                                    }
+                                }
+                            }
+                        } else {
+                            // Legacy button hotzones near top-left control area
+                            let button_y = 15; // Approximate line number for the buttons
+                            if mouse.row == button_y {
+                                if (1..=3).contains(&mouse.column) {
+                                    // [-]
+                                    let current_duration = *tick_duration_tx.borrow();
+                                    let new_duration = current_duration * 2;
+                                    active_preset = None;
+                                    tick_duration_tx.send(new_duration).ok();
+                                } else if (5..=7).contains(&mouse.column) {
+                                    // [+]
+                                    let current_duration = *tick_duration_tx.borrow();
+                                    let new_duration =
+                                        (current_duration / 2).max(Duration::from_millis(1));
+                                    active_preset = None;
+                                    tick_duration_tx.send(new_duration).ok();
+                                } else if (9..=11).contains(&mouse.column) {
+                                    // [R]
+                                    active_preset = Some('2');
+                                    tick_duration_tx.send(initial_tick_duration).ok();
+                                    timescale_tx.send(initial_years_per_tick).ok();
+                                    pause_tx.send(false).ok();
+                                }
                             }
                         }
                     }
@@ -277,6 +311,22 @@ fn apply_preset(
     tick_duration_tx.send(preset.duration()).ok();
     timescale_tx.send(preset.years_per_tick).ok();
     Some(key)
+}
+
+fn point_in_rect(x: u16, y: u16, area: Rect) -> bool {
+    x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
+}
+
+fn screen_to_axial(area: Rect, x: u16, y: u16) -> Option<AxialCoord> {
+    let center_x = area.x as i32 + area.width as i32 / 2;
+    let center_y = area.y as i32 + area.height as i32 / 2;
+    let r = y as i32 - center_y;
+    let q_term = x as i32 - center_x - r;
+    if q_term % 2 != 0 {
+        return None;
+    }
+    let q = q_term / 2;
+    Some(AxialCoord::new(q, r))
 }
 
 fn init_terminal() -> io::Result<Terminal<impl Backend>> {

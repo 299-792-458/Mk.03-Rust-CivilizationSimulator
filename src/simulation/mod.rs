@@ -58,6 +58,9 @@ impl SimulationWorld {
         world.insert_resource(WorldMetadata::default());
         world.insert_resource(WorldEventLog::default());
         world.insert_resource(ScienceVictory::default());
+        world.insert_resource(IdeologyMatrix::default());
+        world.insert_resource(DiplomaticRelations::default());
+        world.insert_resource(CivilizationalCycles::default());
         let mut cosmic = CosmicTimeline::default();
         cosmic.timescale_years_per_tick = config.years_per_tick;
         world.insert_resource(cosmic);
@@ -81,13 +84,21 @@ impl SimulationWorld {
                 climate_system,
                 nuclear_decay_system,
                 peace_recovery_system,
+            )
+                .chain(),
+        );
+        schedule.add_systems(
+            (
                 richness_overlay_system,
                 climate_impact_system,
                 bloc_system,
                 war_fatigue_system,
                 territory_system,
+                cycle_system,
                 demography_system,
                 event_generation_system,
+                ideology_system,
+                diplomacy_system,
                 logging_system,
             )
                 .chain(),
@@ -126,6 +137,7 @@ impl SimulationWorld {
         let war_fatigue = self.world.resource::<WarFatigue>().clone();
         let richness = self.world.resource::<WorldRichness>().clone();
         let climate = self.world.resource::<ClimateState>().clone();
+        let ideology = self.world.resource::<IdeologyMatrix>().clone();
         let cosmic = self.world.resource::<CosmicTimeline>().clone();
         let mut ledger = self.world.resource_mut::<CivilizationalLedger>();
         let (total_pop, total_gdp) = {
@@ -277,6 +289,13 @@ impl SimulationWorld {
                     biodiversity_history: climate.biodiversity_history.clone(),
                     sea_level: climate.sea_level,
                     ice_line: climate.ice_line,
+                    ideology_leaning: ideology.leaning.iter().map(|(n, v)| (*n, *v)).collect(),
+                    ideology_cohesion: ideology.cohesion.iter().map(|(n, v)| (*n, *v)).collect(),
+                    ideology_volatility: ideology
+                        .volatility
+                        .iter()
+                        .map(|(n, v)| (*n, *v))
+                        .collect(),
                 },
                 science_victory_snapshot,
                 entities,

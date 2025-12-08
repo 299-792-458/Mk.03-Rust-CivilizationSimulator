@@ -54,6 +54,9 @@ pub struct WorldOverlaySnapshot {
     pub biodiversity_history: Vec<f32>,
     pub sea_level: f32,
     pub ice_line: f32,
+    pub ideology_leaning: Vec<(Nation, f32)>,
+    pub ideology_cohesion: Vec<(Nation, f32)>,
+    pub ideology_volatility: Vec<(Nation, f32)>,
 }
 
 #[derive(Debug, Clone, Serialize, Default)]

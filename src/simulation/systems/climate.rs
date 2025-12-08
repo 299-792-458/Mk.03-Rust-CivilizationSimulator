@@ -15,42 +15,50 @@ pub fn climate_system(
     time: Res<WorldTime>,
     mut log: ResMut<WorldEventLog>,
 ) {
-    // Baseline slow increase
-    climate.carbon_ppm += 0.05;
-
-    // Geologic stage scaling
+    // Baseline drift follows geologic stage and prosperity.
     let stage_factor = match cosmic.geologic_stage.as_str() {
-        "원시 지각" => 0.5,
+        "원시 지각" => 0.45,
         "태고 해양" => 0.7,
-        "산소 폭발" => 1.1,
-        "캄브리아/대륙 분화" => 1.2,
-        "대멸종 순환" => 1.4,
-        _ => 1.6,
+        "산소 폭발" => 1.0,
+        "캄브리아/대륙 분화" => 1.15,
+        "대멸종 순환" => 1.35,
+        _ => 1.5,
     };
-
-    // Industry proxy: richness acts as prosperity => higher emissions
-    climate.carbon_ppm += richness.richness * 0.8 * stage_factor;
-
-    // War proxy: war fatigue spikes emissions and risk
-    climate.carbon_ppm += fatigue.intensity * 0.02 * stage_factor;
-
-    // Nuclear fallout amplifies climate risk
     let blast_total: u32 = blasts.0.values().map(|v| *v as u32).sum();
-    climate.carbon_ppm += blast_total as f32 * 0.03;
 
-    // Biodiversity erosion from carbon/risk
-    climate.biodiversity -= (climate.carbon_ppm / 1000.0) * 0.2 * stage_factor;
-    climate.biodiversity = climate.biodiversity.max(0.0);
+    // Emissions: prosperity + war + fallout
+    let mut carbon_delta = 0.04 * stage_factor;
+    carbon_delta += richness.richness * 0.75 * stage_factor;
+    carbon_delta += fatigue.intensity * 0.02 * stage_factor;
+    carbon_delta += blast_total as f32 * 0.06;
 
-    // Climate risk is a composite
+    // Biodiversity offers mild mitigation; riskier stages erode it faster.
+    let mitigation = (climate.biodiversity / 100.0).clamp(0.1, 1.0);
+    carbon_delta *= 1.0 - mitigation * 0.25;
+
+    climate.carbon_ppm = (climate.carbon_ppm + carbon_delta).clamp(180.0, 1500.0);
+
+    // Biodiversity erosion and slow recovery toward a ceiling.
+    let erosion = (climate.carbon_ppm / 1200.0) * stage_factor * 0.8
+        + fatigue.intensity * 0.01
+        + blast_total as f32 * 0.05;
+    let recovery = (1.0 - richness.richness).max(0.05) * 0.6;
+    climate.biodiversity = (climate.biodiversity - erosion + recovery).clamp(5.0, 120.0);
+
+    // Composite climate risk: carbon weight, war pressure, fallout, prosperity.
+    let carbon_pressure = (climate.carbon_ppm / 10.0).powf(0.92);
+    let war_pressure = fatigue.intensity * 0.5;
+    let prosperity_pressure = richness.richness * 22.0;
     climate.climate_risk =
-        (climate.carbon_ppm * 0.6 + fatigue.intensity * 0.4 + blast_total as f32 * 0.5) * 0.01;
-    climate.climate_risk = climate.climate_risk.clamp(0.0, 100.0);
-    // Sea level and ice line (normalized 0..1)
-    climate.sea_level = (climate.climate_risk * 0.01 * 0.6 + richness.richness * 0.4)
-        .min(1.0)
-        .max(0.0);
-    climate.ice_line = (1.0 - (climate.carbon_ppm / 800.0).min(1.0)) as f32;
+        (carbon_pressure + war_pressure + prosperity_pressure + blast_total as f32 * 1.2)
+            .clamp(0.0, 140.0);
+
+    // Sea/ice lines respond slowly toward targets to avoid jitter.
+    let target_sea = ((climate.climate_risk / 140.0).powf(1.2) * 0.8 + richness.richness * 0.2)
+        .clamp(0.02, 0.98);
+    let target_ice = (1.0 - (climate.carbon_ppm / 1400.0).powf(0.85)).clamp(0.0, 0.9);
+    climate.sea_level = lerp(climate.sea_level, target_sea, 0.08);
+    climate.ice_line = lerp(climate.ice_line, target_ice, 0.08);
 
     let carbon_ppm = climate.carbon_ppm;
     let risk = climate.climate_risk;
@@ -76,6 +84,10 @@ pub fn climate_system(
             },
         });
     }
+}
+
+fn lerp(current: f32, target: f32, alpha: f32) -> f32 {
+    current + (target - current) * alpha
 }
 
 fn push_history(history: &mut Vec<f32>, value: f32) {
