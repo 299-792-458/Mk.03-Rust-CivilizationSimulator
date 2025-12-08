@@ -60,6 +60,14 @@ pub struct WorldOverlaySnapshot {
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
+pub struct DiplomaticSnapshot {
+    pub trust: Vec<(Nation, f32)>,
+    pub fear: Vec<(Nation, f32)>,
+    pub alliances: Vec<(Nation, Nation)>,
+    pub sanctions: Vec<(Nation, Nation)>,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
 pub struct ScienceVictorySnapshot {
     pub leader: Option<Nation>,
     pub leader_progress: f32,
@@ -99,6 +107,7 @@ pub struct ObserverSnapshot {
     pub civ_state: AllNationCivState,
     pub grid: HexGridSnapshot,
     pub overlay: WorldOverlaySnapshot,
+    pub diplomacy: DiplomaticSnapshot,
     pub science_victory: ScienceVictorySnapshot,
     pub entities: Vec<EntitySnapshot>,
     pub events: Vec<WorldEvent>,
@@ -127,6 +136,7 @@ impl ObserverSnapshot {
             civ_state: AllNationCivState::default(),
             grid: HexGridSnapshot::default(),
             overlay: WorldOverlaySnapshot::default(),
+            diplomacy: DiplomaticSnapshot::default(),
             science_victory: ScienceVictorySnapshot::default(),
             entities: Vec::new(),
             events: Vec::new(),
@@ -149,6 +159,7 @@ impl ObserverSnapshot {
         civ_state: AllNationCivState,
         grid: HexGridSnapshot,
         overlay: WorldOverlaySnapshot,
+        diplomacy: DiplomaticSnapshot,
         science_victory: ScienceVictorySnapshot,
         entities: Vec<EntitySnapshot>,
         events: Vec<WorldEvent>,
@@ -167,6 +178,7 @@ impl ObserverSnapshot {
         self.civ_state = civ_state;
         self.grid = grid;
         self.overlay = overlay;
+        self.diplomacy = diplomacy;
         self.science_victory = science_victory;
         self.entities = entities;
         self.events = events;

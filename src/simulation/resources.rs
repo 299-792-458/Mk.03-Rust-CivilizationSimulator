@@ -29,6 +29,7 @@ pub struct NationMetrics {
     pub elder: u64,
     pub productivity: f32,
     pub unemployment: f32,
+    pub trade_penalty: f32,
 }
 
 impl Default for NationMetrics {
@@ -53,6 +54,7 @@ impl Default for NationMetrics {
             elder: 300_000,
             productivity: 1.0,
             unemployment: 6.0,
+            trade_penalty: 0.0,
         }
     }
 }
@@ -149,6 +151,15 @@ pub struct DiplomaticRelations {
 pub struct CivilizationalCycles {
     pub golden_age: HashMap<Nation, f32>,
     pub decline: HashMap<Nation, f32>,
+}
+
+#[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
+pub struct SupplyState {
+    pub food: f32,
+    pub energy: f32,
+    pub rare: f32,
+    pub deficit_ticks: u32,
+    pub history: Vec<(f32, f32, f32)>,
 }
 
 /// 전지구 생태/기후 상태

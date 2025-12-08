@@ -74,6 +74,20 @@ pub struct Personality {
     pub curious: f32,
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum GoalKind {
+    Wealth,
+    Glory,
+    Survival,
+    Influence,
+}
+
+#[derive(Debug, Clone, Component, Serialize, Deserialize)]
+pub struct Goals {
+    pub primary: GoalKind,
+    pub intensity: f32, // 0..1
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum BehaviorState {
     Idle,

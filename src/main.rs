@@ -84,6 +84,8 @@ async fn main() -> anyhow::Result<()> {
     let mut selected_owner: Option<simulation::Nation> = None;
     let mut last_map_area = ratatui::prelude::Rect::default();
     let mut log_filter = ui::LogFilter::All;
+    let mut pinned_nation: Option<simulation::Nation> = None;
+    let mut log_pin_selected = false;
 
     let observer = Arc::new(RwLock::new(ObserverSnapshot::default()));
     let shutdown_notify = Arc::new(Notify::new());
@@ -153,6 +155,8 @@ async fn main() -> anyhow::Result<()> {
             selected_hex,
             selected_owner,
             log_filter,
+            pinned_nation,
+            log_pin_selected,
         };
 
         terminal.draw(|frame| {
@@ -223,6 +227,15 @@ async fn main() -> anyhow::Result<()> {
                     }
                     KeyCode::Char('f') | KeyCode::Char('F') => {
                         log_filter = log_filter.next();
+                    }
+                    KeyCode::Char('g') | KeyCode::Char('G') => {
+                        log_pin_selected = !log_pin_selected;
+                        if log_pin_selected {
+                            pinned_nation = selected_owner;
+                        }
+                    }
+                    KeyCode::Char('c') | KeyCode::Char('C') => {
+                        pinned_nation = selected_owner.or(pinned_nation);
                     }
                     _ => {}
                 },

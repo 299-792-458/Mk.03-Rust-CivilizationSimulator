@@ -19,6 +19,8 @@ pub struct ControlState {
     pub selected_hex: Option<AxialCoord>,
     pub selected_owner: Option<Nation>,
     pub log_filter: LogFilter,
+    pub pinned_nation: Option<Nation>,
+    pub log_pin_selected: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -216,7 +218,22 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
             format!("Sea {:.0}%", snapshot.overlay.sea_level * 100.0),
             Style::default().fg(Color::Blue),
         ),
+        Span::raw(" | "),
+        Span::styled(
+            format!(
+                "동맹 {} · 제재 {}",
+                snapshot.diplomacy.alliances.len(),
+                snapshot.diplomacy.sanctions.len()
+            ),
+            Style::default().fg(Color::Magenta),
+        ),
     ]));
+    if let Some(pin) = control.pinned_nation {
+        header_lines.push(Line::from(vec![
+            Span::styled("PIN ", Style::default().fg(Color::LightCyan).bold()),
+            Span::raw(pin.name()),
+        ]));
+    }
 
     let header_paragraph = Paragraph::new(header_lines).block(Block::new().borders(Borders::TOP));
     frame.render_widget(header_paragraph, main_layout[0]);
@@ -262,7 +279,16 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         .events
         .iter()
         .rev()
-        .filter(|e| filter_event(e, control.log_filter))
+        .filter(|e| {
+            filter_event(
+                e,
+                control.log_filter,
+                control
+                    .log_pin_selected
+                    .then(|| control.pinned_nation)
+                    .flatten(),
+            )
+        })
         .take(20)
         .map(|event| {
             let (nation_cell, style) = match &event.kind {
@@ -525,6 +551,30 @@ fn render_control_deck(
                 Style::default().fg(Color::Gray),
             ),
         ]),
+        Line::from(vec![
+            Span::styled("Log ", Style::default().fg(Color::Cyan)),
+            Span::raw(format!("필터 {} ", control.log_filter.label())),
+            Span::styled(
+                if control.log_pin_selected {
+                    "PIN ON"
+                } else {
+                    "PIN OFF"
+                },
+                Style::default().fg(if control.log_pin_selected {
+                    Color::LightCyan
+                } else {
+                    Color::Gray
+                }),
+            ),
+            Span::raw(" · 핀 "),
+            Span::styled(
+                control
+                    .pinned_nation
+                    .map(|n| n.name().to_string())
+                    .unwrap_or_else(|| "없음".to_string()),
+                Style::default().fg(Color::Magenta),
+            ),
+        ]),
         Line::from(format!(
             "Stage {} | 멸종 {} | Hex {} | Entities {}",
             snapshot.geologic_stage,
@@ -546,7 +596,13 @@ fn render_control_deck(
             Span::styled("Q", Style::default().fg(Color::Red)),
             Span::raw(" 종료  "),
             Span::styled("[ ]", Style::default().fg(Color::LightCyan)),
-            Span::raw(" 지도 모드"),
+            Span::raw(" 지도 모드  "),
+            Span::styled("F", Style::default().fg(Color::Cyan)),
+            Span::raw(" 로그필터  "),
+            Span::styled("G", Style::default().fg(Color::Magenta)),
+            Span::raw(" 핀 on/off  "),
+            Span::styled("C", Style::default().fg(Color::LightCyan)),
+            Span::raw(" 선택 핀"),
         ]),
         Line::from("마우스: 좌측 상단 [-][+][R] 터미널 버튼도 사용 가능"),
     ];
@@ -646,6 +702,21 @@ fn render_control_deck(
             ),
             None => "선택 헥스 없음".to_string(),
         }),
+        Line::from(vec![
+            Span::styled("외교 ", Style::default().fg(Color::Magenta).bold()),
+            Span::raw(format!(
+                "동맹 {} · 제재 {} · Trust {:.0}",
+                snapshot.diplomacy.alliances.len(),
+                snapshot.diplomacy.sanctions.len(),
+                snapshot
+                    .diplomacy
+                    .trust
+                    .iter()
+                    .map(|(_, v)| *v)
+                    .sum::<f32>()
+                    / snapshot.diplomacy.trust.len().max(1) as f32
+            )),
+        ]),
     ];
     let legend = Paragraph::new(legend_lines)
         .block(
@@ -854,6 +925,25 @@ fn render_world_state_panel(
             snapshot.science_victory.total_economy,
             snapshot.events.len()
         )),
+        Line::from(match control.selected_hex {
+            Some(hex) => {
+                let owner = control
+                    .selected_owner
+                    .map(|n| n.name().to_string())
+                    .unwrap_or_else(|| "무주지".to_string());
+                let war = snapshot.combat_hexes.contains(&hex);
+                let nuke = snapshot.nuclear_hexes.contains(&hex);
+                format!(
+                    "선택 헥스 q:{} r:{} | 소유 {} | 전선 {} | 핵 {}",
+                    hex.q,
+                    hex.r,
+                    owner,
+                    if war { "예" } else { "없음" },
+                    if nuke { "예" } else { "없음" }
+                )
+            }
+            None => "선택 헥스 없음 — 지도 클릭으로 선택".to_string(),
+        }),
     ];
     let info_paragraph = Paragraph::new(info_lines);
     frame.render_widget(info_paragraph, panel_layout[0]);
@@ -864,8 +954,8 @@ fn render_world_state_panel(
     render_war_theater_panel(frame, panel_layout[4], snapshot);
 
     let mut nations: Vec<_> = snapshot.all_metrics.0.keys().copied().collect();
-    if let Some(selected) = control.selected_owner {
-        nations.sort_by_key(|n| if *n == selected { 0 } else { 1 });
+    if let Some(focus) = control.pinned_nation.or(control.selected_owner) {
+        nations.sort_by_key(|n| if *n == focus { 0 } else { 1 });
     } else {
         nations.sort_by_key(|a| a.name());
     }
@@ -899,6 +989,49 @@ fn render_world_state_panel(
                     } else {
                         Color::Reset
                     }),
+            )));
+            // Diplomacy/ideology quick stats
+            let trust = snapshot
+                .diplomacy
+                .trust
+                .iter()
+                .find(|(n, _)| *n == nation)
+                .map(|(_, v)| *v)
+                .unwrap_or(40.0);
+            let fear = snapshot
+                .diplomacy
+                .fear
+                .iter()
+                .find(|(n, _)| *n == nation)
+                .map(|(_, v)| *v)
+                .unwrap_or(35.0);
+            let leaning = snapshot
+                .overlay
+                .ideology_leaning
+                .iter()
+                .find(|(n, _)| *n == nation)
+                .map(|(_, v)| *v)
+                .unwrap_or(50.0);
+            let cohesion = snapshot
+                .overlay
+                .ideology_cohesion
+                .iter()
+                .find(|(n, _)| *n == nation)
+                .map(|(_, v)| *v)
+                .unwrap_or(50.0);
+            let volatility = snapshot
+                .overlay
+                .ideology_volatility
+                .iter()
+                .find(|(n, _)| *n == nation)
+                .map(|(_, v)| *v)
+                .unwrap_or(20.0);
+            nation_lines.push(Line::from(Span::styled(
+                format!(
+                    "  Trust {:.0} | Fear {:.0} | 이념 {:.0} / 결속 {:.0} / 변동 {:.0}",
+                    trust, fear, leaning, cohesion, volatility
+                ),
+                Style::default().fg(Color::Gray),
             )));
 
             nation_lines.push(Line::from(Span::styled(
@@ -1701,8 +1834,12 @@ fn build_sentiment_series(snapshot: &ObserverSnapshot, buckets: usize, last_tick
     shifted
 }
 
-fn filter_event(event: &crate::simulation::WorldEvent, filter: LogFilter) -> bool {
-    match filter {
+fn filter_event(
+    event: &crate::simulation::WorldEvent,
+    filter: LogFilter,
+    pinned: Option<crate::simulation::Nation>,
+) -> bool {
+    let passes = match filter {
         LogFilter::All => true,
         LogFilter::War => matches!(event.kind, WorldEventKind::Warfare { .. }),
         LogFilter::TradeSocial => matches!(
@@ -1716,6 +1853,30 @@ fn filter_event(event: &crate::simulation::WorldEvent, filter: LogFilter) -> boo
                 | WorldEventKind::InterstellarProgress { .. }
                 | WorldEventKind::InterstellarVictory { .. }
         ),
+    };
+    if !passes {
+        return false;
+    }
+    if let Some(pin) = pinned {
+        return event_involves(event, pin);
+    }
+    true
+}
+
+fn event_involves(
+    event: &crate::simulation::WorldEvent,
+    nation: crate::simulation::Nation,
+) -> bool {
+    match &event.kind {
+        WorldEventKind::Trade { actor, .. } => actor.nation == nation,
+        WorldEventKind::Social { convener, .. } => convener.nation == nation,
+        WorldEventKind::MacroShock { .. } => false,
+        WorldEventKind::Warfare { winner, loser, .. } => *winner == nation || *loser == nation,
+        WorldEventKind::EraShift { nation: n, .. } => *n == nation,
+        WorldEventKind::ScienceProgress { nation: n, .. } => *n == nation,
+        WorldEventKind::ScienceVictory { winner, .. } => *winner == nation,
+        WorldEventKind::InterstellarProgress { leader, .. } => *leader == nation,
+        WorldEventKind::InterstellarVictory { winner, .. } => *winner == nation,
     }
 }
 
@@ -1764,8 +1925,24 @@ fn render_diagnostics_strip(
 
     let lines = vec![Line::from(vec![
         Span::styled(
-            format!("로그 필터: {}", control.log_filter.label()),
+            format!(
+                "로그 {}{}",
+                control.log_filter.label(),
+                if control.log_pin_selected {
+                    " (PIN)"
+                } else {
+                    ""
+                }
+            ),
             Style::default().fg(Color::Cyan).bold(),
+        ),
+        Span::raw(" · PIN "),
+        Span::styled(
+            control
+                .pinned_nation
+                .map(|n| n.name().to_string())
+                .unwrap_or_else(|| "없음".to_string()),
+            Style::default().fg(Color::Magenta),
         ),
         Span::raw(" · 전쟁 피로 Δ "),
         Span::styled(
@@ -1781,6 +1958,16 @@ fn render_diagnostics_strip(
         Span::styled(
             format_number_commas(pop_trend.max(0.0) as u64),
             Style::default().fg(Color::Green),
+        ),
+        Span::raw(" · 동맹 "),
+        Span::styled(
+            snapshot.diplomacy.alliances.len().to_string(),
+            Style::default().fg(Color::Magenta),
+        ),
+        Span::raw(" · 제재 "),
+        Span::styled(
+            snapshot.diplomacy.sanctions.len().to_string(),
+            Style::default().fg(Color::Gray),
         ),
     ])];
     frame.render_widget(Paragraph::new(lines), area);

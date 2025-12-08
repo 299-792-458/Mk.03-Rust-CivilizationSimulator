@@ -61,6 +61,7 @@ impl SimulationWorld {
         world.insert_resource(IdeologyMatrix::default());
         world.insert_resource(DiplomaticRelations::default());
         world.insert_resource(CivilizationalCycles::default());
+        world.insert_resource(SupplyState::default());
         let mut cosmic = CosmicTimeline::default();
         cosmic.timescale_years_per_tick = config.years_per_tick;
         world.insert_resource(cosmic);
@@ -91,13 +92,17 @@ impl SimulationWorld {
             (
                 richness_overlay_system,
                 climate_impact_system,
+                flood_system,
+                supply_chain_system,
                 bloc_system,
                 war_fatigue_system,
                 territory_system,
                 cycle_system,
+                security_system,
                 demography_system,
                 event_generation_system,
                 ideology_system,
+                mission_system,
                 diplomacy_system,
                 logging_system,
             )
@@ -138,6 +143,7 @@ impl SimulationWorld {
         let richness = self.world.resource::<WorldRichness>().clone();
         let climate = self.world.resource::<ClimateState>().clone();
         let ideology = self.world.resource::<IdeologyMatrix>().clone();
+        let diplo = self.world.resource::<DiplomaticRelations>().clone();
         let cosmic = self.world.resource::<CosmicTimeline>().clone();
         let mut ledger = self.world.resource_mut::<CivilizationalLedger>();
         let (total_pop, total_gdp) = {
@@ -297,6 +303,12 @@ impl SimulationWorld {
                         .map(|(n, v)| (*n, *v))
                         .collect(),
                 },
+                observer::DiplomaticSnapshot {
+                    trust: diplo.trust.iter().map(|(n, v)| (*n, *v)).collect(),
+                    fear: diplo.fear.iter().map(|(n, v)| (*n, *v)).collect(),
+                    alliances: diplo.alliances.clone(),
+                    sanctions: diplo.sanctions.clone(),
+                },
                 science_victory_snapshot,
                 entities,
                 events,
@@ -379,7 +391,29 @@ fn seed_grid(world: &mut World) {
                 ((angle + sector_size / 2.0) / sector_size).floor() as usize % sectors.len();
             let owner = sectors[index];
 
-            let hex_entity = world.spawn((coord, Hex { owner })).id();
+            // Elevation adds flood dynamics; biome assignment varies by elevation.
+            let elevation =
+                ((angle / 72.0).sin() * 0.3 + 0.7 + (q as f32 * 0.02) + (r as f32 * 0.02))
+                    .clamp(0.1, 1.4);
+            let biome = if elevation < 0.35 {
+                Biome::Market
+            } else if elevation < 0.6 {
+                Biome::Plains
+            } else if elevation < 0.9 {
+                Biome::Forest
+            } else {
+                Biome::Village
+            };
+            let hex_entity = world
+                .spawn((
+                    coord,
+                    Hex {
+                        owner,
+                        elevation,
+                        biome,
+                    },
+                ))
+                .id();
             hex_entities.insert(coord, hex_entity);
         }
     }
@@ -424,6 +458,10 @@ fn seed_entities(world: &mut World) {
                 curious: 0.5,
             },
             Behavior { state: Idle },
+            Goals {
+                primary: GoalKind::Wealth,
+                intensity: 0.7,
+            },
         ),
         (
             Identity {
@@ -453,6 +491,10 @@ fn seed_entities(world: &mut World) {
                 curious: 0.4,
             },
             Behavior { state: Explore },
+            Goals {
+                primary: GoalKind::Glory,
+                intensity: 0.8,
+            },
         ),
         (
             Identity {
@@ -479,6 +521,10 @@ fn seed_entities(world: &mut World) {
                 curious: 0.7,
             },
             Behavior { state: Gather },
+            Goals {
+                primary: GoalKind::Influence,
+                intensity: 0.6,
+            },
         ),
         (
             Identity {
@@ -508,10 +554,14 @@ fn seed_entities(world: &mut World) {
                 curious: 0.6,
             },
             Behavior { state: Idle },
+            Goals {
+                primary: GoalKind::Survival,
+                intensity: 0.5,
+            },
         ),
     ];
 
-    for (identity, position, inventory, attributes, personality, behavior) in npc_templates {
+    for (identity, position, inventory, attributes, personality, behavior, goals) in npc_templates {
         world.spawn((
             identity,
             position,
@@ -519,6 +569,7 @@ fn seed_entities(world: &mut World) {
             attributes,
             personality,
             behavior,
+            goals,
         ));
     }
 }

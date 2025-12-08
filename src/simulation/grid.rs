@@ -30,6 +30,8 @@ impl AxialCoord {
 #[derive(Debug, Clone, Component, Serialize, Deserialize)]
 pub struct Hex {
     pub owner: Nation,
+    pub elevation: f32,
+    pub biome: crate::simulation::Biome,
 }
 
 #[derive(Debug, Clone, Resource, Serialize, Deserialize, Default)]
