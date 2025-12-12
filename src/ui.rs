@@ -228,7 +228,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         Block::new()
             .borders(Borders::TOP)
             .title("TACTICAL CONSOLE — LIVE FEED")
-            .style(Style::default().bg(Color::Rgb(30, 20, 10)).fg(Color::White)),
+            .style(Style::default().bg(Color::Black).fg(Color::White)),
     );
     frame.render_widget(header_paragraph, main_layout[0]);
     render_control_deck(frame, main_layout[1], snapshot, control);
@@ -265,7 +265,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     let map_block = Block::default()
         .borders(Borders::ALL)
         .title("THEATER MAP — combat & control zones")
-        .style(Style::default().bg(Color::Rgb(30, 20, 10)).fg(Color::White));
+        .style(Style::default().bg(Color::Black).fg(Color::White));
     let map_area = map_block.inner(left_column[0]);
     frame.render_widget(map_block, left_column[0]);
     frame.render_widget(map_widget, map_area);
