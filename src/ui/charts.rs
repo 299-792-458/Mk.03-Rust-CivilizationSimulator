@@ -58,11 +58,7 @@ pub fn render_evolutionary_charts(
         )
         .data(&moon_series)
         .max(snapshot.science_victory.goal.max(1.0) as u64)
-        .style(
-            Style::default()
-                .fg(Color::LightGreen)
-                .bg(Color::Rgb(20, 20, 30)),
-        );
+        .style(Style::default().fg(Color::LightGreen));
     frame.render_widget(moon, lanes[1]);
 
     let climate_lane = Layout::default()

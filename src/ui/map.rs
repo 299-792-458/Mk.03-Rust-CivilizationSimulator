@@ -168,7 +168,7 @@ impl<'a> Widget for MapWidget<'a> {
                 style = style.bold();
             }
             if Some(hex.owner) == self.focus {
-                style = style.bg(Color::Rgb(30, 30, 60)).fg(Color::White).bold();
+                style = style.fg(Color::White).bold();
             }
             let glyph = if self.selected_hex == Some(coord) {
                 "◎"
@@ -192,12 +192,7 @@ impl<'a> Widget for MapWidget<'a> {
             }
             if self.snapshot.nuclear_hexes.contains(&coord) {
                 let glyph = if self.selected_hex == Some(coord) { "◎" } else { "◎" };
-                buf.set_string(
-                    screen_x as u16,
-                    screen_y as u16,
-                    glyph,
-                    Style::default().fg(Color::Yellow).bg(Color::Red),
-                );
+                buf.set_string(screen_x as u16, screen_y as u16, glyph, Style::default().fg(Color::Yellow));
             } else if self.snapshot.combat_hexes.contains(&coord) {
                 let style = if tick % 2 == 0 {
                     Style::default().fg(Color::White)
