@@ -2,11 +2,12 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::Line,
-    widgets::{BarChart, Block, Borders, Paragraph, Sparkline},
+    widgets::{BarChart, Block, BorderType, Borders, Paragraph, Sparkline},
 };
 
 use crate::simulation::events::WorldEventKind;
 use crate::simulation::ObserverSnapshot;
+use crate::ui::MODERN_THEME;
 
 /// Evolutionary, climate, and sentiment charts.
 pub fn render_evolutionary_charts(
@@ -14,10 +15,12 @@ pub fn render_evolutionary_charts(
     area: Rect,
     snapshot: &ObserverSnapshot,
 ) {
-    let block = Block::default()
-        .title("[ GRAPHICS ] Evolutionary Markets — 5B-year portfolio")
-        .borders(Borders::ALL)
-        .style(Style::default().bg(Color::Black).fg(Color::White));
+    let block = Block::bordered()
+        .title(" [ GRAPHICS ] Evolutionary Markets ")
+        .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(MODERN_THEME.border));
+
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -37,9 +40,12 @@ pub fn render_evolutionary_charts(
     let legend = Paragraph::new(vec![
         Line::from(Span::styled(
             "Parallel visualization of emergent timescales and macro shocks",
-            Style::default().fg(Color::LightCyan),
+            Style::default().fg(MODERN_THEME.accent_a),
         )),
-        Line::from("Per-tick momentum, event density, mood vector"),
+        Line::from(Span::styled(
+            "Per-tick momentum, event density, mood vector",
+            Style::default().fg(MODERN_THEME.text_dim),
+        )),
     ]);
     frame.render_widget(legend, lanes[0]);
 
@@ -52,9 +58,10 @@ pub fn render_evolutionary_charts(
     ensure_nonempty(&mut moon_series);
     let moon = Sparkline::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Moonshot Momentum — leader orbit"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Moonshot Momentum "),
         )
         .data(&moon_series)
         .max(snapshot.science_victory.goal.max(1.0) as u64)
@@ -82,63 +89,65 @@ pub fn render_evolutionary_charts(
         .split(climate_lane[1]);
 
     let carbon = Sparkline::default()
-        .block(Block::default().borders(Borders::ALL).title("Carbon ppm"))
+        .block(Block::bordered().border_type(BorderType::Rounded).border_style(Style::default().fg(MODERN_THEME.border)).title(" Carbon ppm "))
         .data(&carbon_series)
         .max(carbon_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::Red));
+        .style(Style::default().fg(MODERN_THEME.warning));
     frame.render_widget(carbon, planet_left[0]);
 
     let biodiversity = Sparkline::default()
-        .block(Block::default().borders(Borders::ALL).title("Biodiversity"))
+        .block(Block::bordered().border_type(BorderType::Rounded).border_style(Style::default().fg(MODERN_THEME.border)).title(" Biodiversity "))
         .data(&biodiversity_series)
         .max(biodiversity_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::Green));
+        .style(Style::default().fg(MODERN_THEME.success));
     frame.render_widget(biodiversity, planet_left[1]);
 
     let risk = Sparkline::default()
-        .block(Block::default().borders(Borders::ALL).title("Climate Risk"))
+        .block(Block::bordered().border_type(BorderType::Rounded).border_style(Style::default().fg(MODERN_THEME.border)).title(" Climate Risk "))
         .data(&risk_series)
         .max(risk_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::Yellow));
+        .style(Style::default().fg(MODERN_THEME.danger));
     frame.render_widget(risk, planet_right[0]);
 
     let warfatigue = Sparkline::default()
-        .block(Block::default().borders(Borders::ALL).title("War Fatigue"))
+        .block(Block::bordered().border_type(BorderType::Rounded).border_style(Style::default().fg(MODERN_THEME.border)).title(" War Fatigue "))
         .data(&war_series)
         .max(war_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::LightRed));
+        .style(Style::default().fg(MODERN_THEME.danger));
     frame.render_widget(warfatigue, planet_right[1]);
 
     let richness = Sparkline::default()
-        .block(Block::default().borders(Borders::ALL).title("Richness %"))
+        .block(Block::bordered().border_type(BorderType::Rounded).border_style(Style::default().fg(MODERN_THEME.border)).title(" Richness % "))
         .data(&richness_series)
         .max(richness_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::LightBlue));
+        .style(Style::default().fg(MODERN_THEME.accent_a));
     frame.render_widget(richness, lanes[3]);
 
     let event_density = build_event_density_series(snapshot, (inner.width as usize).max(24));
     let density = Sparkline::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Event Density — War·Trade·Shock Count"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Event Density "),
         )
         .data(&event_density)
         .max(event_density.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::Yellow));
+        .style(Style::default().fg(MODERN_THEME.warning));
     frame.render_widget(density, lanes[4]);
 
     let sentiment_curve =
         build_sentiment_series(snapshot, (inner.width as usize / 2).max(16), snapshot.tick);
     let sentiment = Sparkline::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Pulse / Sentiment — Evolutionary Mood Drift"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Pulse / Sentiment "),
         )
         .data(&sentiment_curve)
         .max(sentiment_curve.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::Magenta));
+        .style(Style::default().fg(MODERN_THEME.accent_b));
     frame.render_widget(sentiment, lanes[5]);
 
     let pop_series: Vec<u64> = snapshot
@@ -156,13 +165,14 @@ pub fn render_evolutionary_charts(
     ensure_nonempty(&mut pop_series);
     let pop = Sparkline::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Civilization Pop (mega)"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Civilization Pop "),
         )
         .data(&pop_series)
         .max(pop_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::White));
+        .style(Style::default().fg(MODERN_THEME.text_main));
     frame.render_widget(pop, lanes[6]);
 }
 
@@ -172,10 +182,12 @@ pub fn render_indicator_grid(
     area: Rect,
     snapshot: &ObserverSnapshot,
 ) {
-    let block = Block::default()
-        .title("[ SENSOR GRID ] Pulseboard — live vertical spans")
-        .borders(Borders::ALL)
-        .style(Style::default().bg(Color::Black).fg(Color::White));
+    let block = Block::bordered()
+        .title(" [ SENSOR GRID ] Pulseboard ")
+        .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(MODERN_THEME.border));
+        
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -196,25 +208,27 @@ pub fn render_indicator_grid(
     let war_series = series_from_history(&snapshot.overlay.war_fatigue_history, 1.0);
     let war_line = Sparkline::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("War Fatigue — front heat"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" War Fatigue "),
         )
         .data(&war_series)
         .max(war_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::LightRed));
+        .style(Style::default().fg(MODERN_THEME.danger));
     frame.render_widget(war_line, top[0]);
 
     let climate_series = series_from_history(&snapshot.overlay.carbon_history, 1.0);
     let climate_line = Sparkline::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Carbon ppm — climate whip"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Carbon ppm "),
         )
         .data(&climate_series)
         .max(climate_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::Yellow));
+        .style(Style::default().fg(MODERN_THEME.warning));
     frame.render_widget(climate_line, top[1]);
 
     let mut pop_series: Vec<u64> = snapshot
@@ -231,13 +245,14 @@ pub fn render_indicator_grid(
     ensure_nonempty(&mut pop_series);
     let population_line = Sparkline::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Population — boom/bust waves"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Population "),
         )
         .data(&pop_series)
         .max(pop_series.iter().cloned().max().unwrap_or(1))
-        .style(Style::default().fg(Color::LightGreen));
+        .style(Style::default().fg(MODERN_THEME.success));
     frame.render_widget(population_line, top[2]);
 
     let bottom = Layout::default()
@@ -256,16 +271,17 @@ pub fn render_indicator_grid(
         .collect();
     let econ_bars = BarChart::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Economy — surplus race"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Economy "),
         )
         .data(&eco_refs)
         .max(eco_max)
         .bar_width(6)
         .bar_gap(1)
-        .bar_style(Style::default().fg(Color::LightGreen))
-        .value_style(Style::default().fg(Color::White).bold());
+        .bar_style(Style::default().fg(MODERN_THEME.success))
+        .value_style(Style::default().fg(MODERN_THEME.text_main).bold());
     frame.render_widget(econ_bars, bottom[0]);
 
     let (mil_pairs, mil_max) = build_metric_bar_data(snapshot, |m| m.military, 5);
@@ -275,16 +291,17 @@ pub fn render_indicator_grid(
         .collect();
     let war_bars = BarChart::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Military — mobilization"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Military "),
         )
         .data(&mil_refs)
         .max(mil_max)
         .bar_width(6)
         .bar_gap(1)
-        .bar_style(Style::default().fg(Color::LightRed))
-        .value_style(Style::default().fg(Color::White).bold());
+        .bar_style(Style::default().fg(MODERN_THEME.danger))
+        .value_style(Style::default().fg(MODERN_THEME.text_main).bold());
     frame.render_widget(war_bars, bottom[1]);
 
     let (science_pairs, science_max) = build_metric_bar_data(snapshot, |m| m.science, 5);
@@ -294,16 +311,17 @@ pub fn render_indicator_grid(
         .collect();
     let science_bars = BarChart::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Science — breakthrough tempo"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Science "),
         )
         .data(&science_refs)
         .max(science_max)
         .bar_width(6)
         .bar_gap(1)
-        .bar_style(Style::default().fg(Color::Cyan))
-        .value_style(Style::default().fg(Color::White).bold());
+        .bar_style(Style::default().fg(MODERN_THEME.accent_a))
+        .value_style(Style::default().fg(MODERN_THEME.text_main).bold());
     frame.render_widget(science_bars, bottom[2]);
 }
 
@@ -328,7 +346,7 @@ pub fn render_science_progress_panel(
         .min(snapshot.science_victory.goal);
 
     let text = Paragraph::new(vec![
-        Line::from("Moonshot progress (1 tick = 1 gen)"),
+        Line::from(Span::styled("Moonshot progress (1 tick = 1 gen)", Style::default().fg(MODERN_THEME.text_dim))),
         Line::from(format!(
             "Leader: {} | {:.1}% / {:.0}% | Cosmic {:.0}y/tick",
             leader_name,
@@ -350,16 +368,17 @@ pub fn render_science_progress_panel(
     }
     let sparkline = Sparkline::default()
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Moonshot Progress (Leader)"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Moonshot Progress (Leader) "),
         )
         .data(&data)
         .max(snapshot.science_victory.goal as u64)
         .style(Style::default().fg(if snapshot.science_victory.finished {
-            Color::LightGreen
+            MODERN_THEME.success
         } else {
-            Color::Cyan
+            MODERN_THEME.accent_a
         }));
     frame.render_widget(sparkline, layout[1]);
 }
