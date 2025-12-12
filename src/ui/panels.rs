@@ -20,7 +20,9 @@ pub fn render_world_state_panel(
     snapshot: &ObserverSnapshot,
     control: &ControlState,
 ) {
-    let outer_block = Block::default().title("World State").borders(Borders::ALL);
+    let outer_block = Block::default()
+        .title("TACTICAL STATUS — civ health / war posture")
+        .borders(Borders::ALL);
     frame.render_widget(outer_block, area);
 
     let panel_layout = Layout::default()
