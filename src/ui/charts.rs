@@ -17,7 +17,7 @@ pub fn render_evolutionary_charts(
     let block = Block::default()
         .title("[ GRAPHICS ] Evolutionary Markets — 5B-year portfolio")
         .borders(Borders::ALL)
-        .style(Style::default().bg(Color::Black).fg(Color::White));
+        .style(Style::default().bg(Color::Rgb(30, 20, 10)).fg(Color::White));
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -179,7 +179,7 @@ pub fn render_indicator_grid(
     let block = Block::default()
         .title("[ SENSOR GRID ] Pulseboard — live vertical spans")
         .borders(Borders::ALL)
-        .style(Style::default().bg(Color::Black).fg(Color::White));
+        .style(Style::default().bg(Color::Rgb(30, 20, 10)).fg(Color::White));
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
