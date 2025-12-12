@@ -2,7 +2,7 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::Line,
-    widgets::{BarChart, Block, Paragraph, Sparkline},
+    widgets::{BarChart, Block, Borders, Paragraph, Sparkline},
 };
 
 use crate::simulation::events::WorldEventKind;
