@@ -571,31 +571,6 @@ fn render_diagnostics_strip(
     frame.render_widget(Paragraph::new(lines), area);
 }
 
-fn ensure_nonempty(series: &mut Vec<u64>) {
-    if series.is_empty() {
-        series.push(0);
-    }
-    if series.iter().all(|v| *v == 0) {
-        series[0] = 1;
-    }
-}
-
-fn series_from_history(history: &[f32], scale: f32) -> Vec<u64> {
-    let mut data: Vec<f32> = history
-        .iter()
-        .rev()
-        .take(120)
-        .cloned()
-        .collect::<Vec<f32>>();
-    data.reverse();
-    let mut mapped: Vec<u64> = data
-        .iter()
-        .map(|v| (v * scale).abs().round() as u64)
-        .collect();
-    ensure_nonempty(&mut mapped);
-    mapped
-}
-
 fn narrative_ticker(snapshot: &ObserverSnapshot) -> String {
     let mut snippets = Vec::new();
     for event in snapshot.events.iter().rev().take(3) {
