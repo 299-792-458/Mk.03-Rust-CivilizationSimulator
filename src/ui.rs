@@ -482,7 +482,8 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     .block(
         Block::default()
             .title("SIGINT FEED — engagements | trade | shocks")
-            .borders(Borders::ALL),
+            .borders(Borders::ALL)
+            .style(Style::default().bg(Color::Rgb(0, 0, 0)).fg(Color::White)),
     );
 
     let event_layout = Layout::default()
