@@ -183,7 +183,7 @@ pub fn render_indicator_grid(
 
     let rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(6), Constraint::Min(0)])
+        .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
         .split(inner);
 
     let top = Layout::default()
