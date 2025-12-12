@@ -437,9 +437,11 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
             .style(Style::default().fg(Color::White).bold()),
     )
     .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title("Event Leaderboard"),
+        Block::bordered()
+            .border_type(BorderType::Rounded)
+            .border_style(Style::default().fg(MODERN_THEME.border))
+            .title(" Event Leaderboard ")
+            .title_style(Style::default().fg(MODERN_THEME.accent_b).bold()),
     );
 
     frame.render_widget(table, area);
