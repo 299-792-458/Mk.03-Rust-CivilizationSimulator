@@ -2,11 +2,11 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table, Wrap},
+    widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, Wrap},
 };
 
 use crate::simulation::ObserverSnapshot;
-use super::ControlState;
+use super::{ControlState, MODERN_THEME};
 
 /// Renders the control deck with status, presets, and legend/meta info.
 pub fn render_control_deck(
@@ -15,10 +15,11 @@ pub fn render_control_deck(
     snapshot: &ObserverSnapshot,
     control: &ControlState,
 ) {
-    let block = Block::default()
-        .title("COMMAND BRIDGE — tempo / overlay / filters")
-        .borders(Borders::ALL)
-        .style(Style::default().bg(Color::Black).fg(Color::White));
+    let block = Block::bordered()
+        .title(" COMMAND BRIDGE ")
+        .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(MODERN_THEME.border));
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -182,9 +183,10 @@ pub fn render_control_deck(
             .style(Style::default().fg(Color::White).bold()),
     )
     .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title("Speed Presets"),
+        Block::bordered()
+            .border_type(BorderType::Rounded)
+            .border_style(Style::default().fg(MODERN_THEME.border))
+            .title(" Speed Presets "),
     );
     frame.render_widget(preset_table, columns[1]);
 
@@ -194,7 +196,7 @@ pub fn render_control_deck(
         .split(columns[2]);
 
     let pulse = Paragraph::new(world_pulse_lines(snapshot))
-        .block(Block::default().borders(Borders::ALL).title("World Pulse"))
+        .block(Block::bordered().border_type(BorderType::Rounded).border_style(Style::default().fg(MODERN_THEME.border)).title(" World Pulse "))
         .wrap(Wrap { trim: true });
     frame.render_widget(pulse, side[0]);
 
@@ -265,9 +267,10 @@ pub fn render_control_deck(
     ];
     let legend = Paragraph::new(legend_lines)
         .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Legend / Overlay"),
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" Legend / Overlay "),
         )
         .wrap(Wrap { trim: true });
     frame.render_widget(legend, side[1]);

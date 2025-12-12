@@ -145,7 +145,7 @@ impl<'a> Widget for MapWidget<'a> {
                     area.x + x,
                     area.y + y,
                     base_char,
-                    Style::default().fg(color),
+                    Style::default().fg(color).bg(MODERN_THEME.bg),
                 );
             }
         }
@@ -163,7 +163,7 @@ impl<'a> Widget for MapWidget<'a> {
             {
                 continue;
             }
-            let mut style = Style::default().fg(hex.owner.color());
+            let mut style = Style::default().fg(hex.owner.color()).bg(MODERN_THEME.bg);
             if Some(hex.owner) == leader {
                 style = style.bold();
             }
@@ -192,12 +192,12 @@ impl<'a> Widget for MapWidget<'a> {
             }
             if self.snapshot.nuclear_hexes.contains(&coord) {
                 let glyph = if self.selected_hex == Some(coord) { "◎" } else { "◎" };
-                buf.set_string(screen_x as u16, screen_y as u16, glyph, Style::default().fg(Color::Yellow));
+                buf.set_string(screen_x as u16, screen_y as u16, glyph, Style::default().fg(Color::Yellow).bg(MODERN_THEME.bg));
             } else if self.snapshot.combat_hexes.contains(&coord) {
                 let style = if tick % 2 == 0 {
-                    Style::default().fg(Color::White)
+                    Style::default().fg(Color::White).bg(MODERN_THEME.bg)
                 } else {
-                    Style::default().fg(Color::Red)
+                    Style::default().fg(Color::Red).bg(MODERN_THEME.bg)
                 };
                 let glyph = if self.selected_hex == Some(coord) { "◎" } else { "✸" };
                 buf.set_string(screen_x as u16, screen_y as u16, glyph, style);
