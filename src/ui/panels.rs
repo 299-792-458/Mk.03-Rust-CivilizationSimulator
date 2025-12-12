@@ -22,7 +22,8 @@ pub fn render_world_state_panel(
 ) {
     let outer_block = Block::default()
         .title("TACTICAL STATUS — civ health / war posture")
-        .borders(Borders::ALL);
+        .borders(Borders::ALL)
+        .style(Style::default().bg(Color::Black).fg(Color::White));
     frame.render_widget(outer_block, area);
 
     let panel_layout = Layout::default()
