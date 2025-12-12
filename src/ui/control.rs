@@ -15,7 +15,8 @@ pub fn render_control_deck(
     snapshot: &ObserverSnapshot,
     control: &ControlState,
 ) {
-    let block = Block::bordered().style(Style::default().bg(MODERN_THEME.panel_bg))
+    let block = Block::bordered()
+        .style(Style::default().bg(MODERN_THEME.panel_bg))
         .title(" COMMAND BRIDGE ")
         .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
         .border_type(BorderType::Rounded)
@@ -183,7 +184,8 @@ pub fn render_control_deck(
             .style(Style::default().fg(Color::White).bold()),
     )
     .block(
-        Block::bordered().style(Style::default().bg(MODERN_THEME.panel_bg))
+        Block::bordered()
+            .style(Style::default().bg(MODERN_THEME.panel_bg))
             .border_type(BorderType::Rounded)
             .border_style(Style::default().fg(MODERN_THEME.border))
             .title(" Speed Presets "),
@@ -197,7 +199,8 @@ pub fn render_control_deck(
 
     let pulse = Paragraph::new(world_pulse_lines(snapshot))
         .block(
-            Block::bordered().style(Style::default().bg(MODERN_THEME.panel_bg))
+            Block::bordered()
+                .style(Style::default().bg(MODERN_THEME.panel_bg))
                 .border_type(BorderType::Rounded)
                 .border_style(Style::default().fg(MODERN_THEME.border))
                 .title(" World Pulse "),
@@ -272,7 +275,8 @@ pub fn render_control_deck(
     ];
     let legend = Paragraph::new(legend_lines)
         .block(
-            Block::bordered().style(Style::default().bg(MODERN_THEME.panel_bg))
+            Block::bordered()
+                .style(Style::default().bg(MODERN_THEME.panel_bg))
                 .border_type(BorderType::Rounded)
                 .border_style(Style::default().fg(MODERN_THEME.border))
                 .title(" Legend / Overlay "),
