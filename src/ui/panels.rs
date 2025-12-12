@@ -456,7 +456,10 @@ fn casualties_from_event(event: &crate::simulation::WorldEvent) -> u64 {
 }
 
 pub fn render_glory_tiles(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
-    let block = Block::default().borders(Borders::ALL).title("Hall of Fame");
+    let block = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(MODERN_THEME.border))
+        .title(" Hall of Fame ");
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
