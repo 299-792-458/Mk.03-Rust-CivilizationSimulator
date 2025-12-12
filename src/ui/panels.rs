@@ -18,7 +18,7 @@ pub fn render_world_state_panel(
     snapshot: &ObserverSnapshot,
     control: &ControlState,
 ) {
-    let outer_block = Block::bordered()
+    let outer_block = Block::bordered().style(Style::default().bg(MODERN_THEME.panel_bg))
         .title(" TACTICAL STATUS ")
         .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
         .border_type(BorderType::Rounded)
@@ -462,7 +462,7 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
         .style(Style::default().fg(Color::White).bold()),
     )
     .block(
-        Block::bordered()
+        Block::bordered().style(Style::default().bg(MODERN_THEME.panel_bg))
             .border_type(BorderType::Rounded)
             .border_style(Style::default().fg(MODERN_THEME.border))
             .title(" Event Leaderboard ")
@@ -481,7 +481,7 @@ fn casualties_from_event(event: &crate::simulation::WorldEvent) -> u64 {
 }
 
 pub fn render_glory_tiles(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
-    let block = Block::bordered()
+    let block = Block::bordered().style(Style::default().bg(MODERN_THEME.panel_bg))
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(MODERN_THEME.border))
         .title(" Hall of Fame ");
@@ -568,7 +568,7 @@ pub fn render_glory_tiles(frame: &mut Frame, area: Rect, snapshot: &ObserverSnap
 }
 
 pub fn render_war_theater_panel(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
-    let block = Block::bordered()
+    let block = Block::bordered().style(Style::default().bg(MODERN_THEME.panel_bg))
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(MODERN_THEME.border))
         .title(" War Theater ");
