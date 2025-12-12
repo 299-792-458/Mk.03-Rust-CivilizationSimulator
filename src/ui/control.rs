@@ -16,7 +16,7 @@ pub fn render_control_deck(
     control: &ControlState,
 ) {
     let block = Block::default()
-        .title("Control Deck — Civilization orchestration")
+        .title("COMMAND BRIDGE — tempo / overlay / filters")
         .borders(Borders::ALL);
     let inner = block.inner(area);
     frame.render_widget(block, area);
