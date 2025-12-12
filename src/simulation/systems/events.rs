@@ -246,4 +246,49 @@ pub fn event_generation_system(
             Some(total_casualties),
         ));
     }
+
+    // Omega-level disaster: meteor strike, gamma-ray burst, or supervolcano chain.
+    if rng.gen_bool(0.01) {
+        let roll = rng.gen_range(0..3);
+        let (stressor, catalyst, severity) = match roll {
+            0 => (
+                "Planet-killer meteor strike",
+                "Impact winter + ejecta plume",
+                rng.gen_range(0.90..0.999), // up to 99.9% loss
+            ),
+            1 => (
+                "Gamma-ray burst exposure",
+                "Atmospheric stripping / radiation storm",
+                0.999, // force ~99.9% loss
+            ),
+            _ => (
+                "Supervolcano cascade",
+                "Ash cloud + famine + climate dive",
+                rng.gen_range(0.70..0.92), // 70–92% loss
+            ),
+        };
+
+        let mut total_casualties = 0u64;
+        for metrics in all_metrics.0.values_mut() {
+            if metrics.is_destroyed {
+                continue;
+            }
+            let loss = ((metrics.population as f32) * severity) as u64;
+            total_casualties = total_casualties.saturating_add(loss);
+            metrics.population = metrics.population.saturating_sub(loss).max(1_000);
+        }
+
+        event_log.push(WorldEvent::macro_shock(
+            tick,
+            epoch,
+            season,
+            stressor.to_string(),
+            catalyst.to_string(),
+            format!(
+                "Omega event — population crash {:.1}% | infrastructure collapse",
+                severity * 100.0
+            ),
+            Some(total_casualties),
+        ));
+    }
 }
