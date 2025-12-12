@@ -121,29 +121,42 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     // Header
     let mut header_lines = vec![
         Line::from(vec![
-            Span::styled(" Mk.03 Rust Studio - TERA ", Style::default().bold()),
-            Span::raw(" | "),
             Span::styled(
-                format!("{} / {}", snapshot.epoch, snapshot.season),
-                Style::default().fg(Color::Cyan),
-            ),
-        ]),
-        Line::from(vec![
-            Span::raw("Atmosphere: "),
-            Span::styled(
-                &snapshot.season_effect.label,
-                Style::default().fg(Color::Yellow).bold(),
+                "[ SUB-COMMAND BRIDGE ]",
+                Style::default().fg(Color::LightGreen).bold(),
             ),
             Span::raw("  "),
             Span::styled(
+                format!("Epoch {} / {}", snapshot.epoch, snapshot.season),
+                Style::default().fg(Color::Cyan),
+            ),
+            Span::raw("  "),
+            Span::styled(
+                format!("COSMIC {:.1}e8y", snapshot.cosmic_age_years / 100_000_000.0),
+                Style::default().fg(Color::Gray),
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("Atmos ", Style::default().fg(Color::Yellow)),
+            Span::styled(
+                &snapshot.season_effect.label,
+                Style::default().fg(Color::LightYellow).bold(),
+            ),
+            Span::raw(" · "),
+            Span::styled(
                 format!(
-                    "Temp {:+.1}  Morale {:+.1}%  Yield {:+.1}%  Risk {:+.1}%",
+                    "ΔT {:+.1}  Morale {:+.1}%  Yield {:+.1}%  Risk {:+.1}%",
                     snapshot.season_effect.temperature * 10.0,
                     snapshot.season_effect.morale_shift,
                     snapshot.season_effect.yield_shift,
                     snapshot.season_effect.risk_shift
                 ),
                 Style::default().fg(Color::White),
+            ),
+            Span::raw(" · "),
+            Span::styled(
+                format!("Sea {:.0}% Ice {:.0}%", snapshot.overlay.sea_level * 100.0, snapshot.overlay.ice_line * 100.0),
+                Style::default().fg(Color::Blue),
             ),
         ]),
     ];
@@ -211,7 +224,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         ]));
     }
 
-    let header_paragraph = Paragraph::new(header_lines).block(Block::new().borders(Borders::TOP));
+    let header_paragraph = Paragraph::new(header_lines).block(
+        Block::new()
+            .borders(Borders::TOP)
+            .title("TACTICAL CONSOLE — LIVE FEED"),
+    );
     frame.render_widget(header_paragraph, main_layout[0]);
     render_control_deck(frame, main_layout[1], snapshot, control);
 
