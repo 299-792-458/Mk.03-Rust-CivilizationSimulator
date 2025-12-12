@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use ratatui::{
     prelude::*,
     style::Stylize,
@@ -8,8 +6,7 @@ use ratatui::{
 };
 
 use crate::simulation::events::WorldEventKind;
-use crate::simulation::format_number_commas;
-use crate::ui::{ControlState, ObserverSnapshot};
+use crate::simulation::ObserverSnapshot;
 
 /// Evolutionary, climate, and sentiment charts.
 pub fn render_evolutionary_charts(
