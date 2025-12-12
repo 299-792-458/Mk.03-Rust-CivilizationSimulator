@@ -67,7 +67,7 @@ const SPEED_PRESETS: [SpeedPreset; 4] = [
 async fn main() -> anyhow::Result<()> {
     // Simulation Setup
     let config = SimulationConfig {
-        tick_duration: Duration::from_secs(1),
+        tick_duration: Duration::from_millis(50),
         grid_radius: 24,
         years_per_tick: 1_000_000.0,
         ..Default::default()
