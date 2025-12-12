@@ -1403,6 +1403,142 @@ fn render_evolutionary_charts(frame: &mut Frame, area: Rect, snapshot: &Observer
     frame.render_widget(pop, lanes[6]);
 }
 
+fn render_indicator_grid(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
+    // Dedicated graph lane so players can see volatile swings without hunting through text.
+    let block = Block::default()
+        .title("Graph Deck — Civilization Pulseboard")
+        .borders(Borders::ALL);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(6), Constraint::Min(0)])
+        .split(inner);
+
+    let top = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Ratio(1, 3),
+            Constraint::Ratio(1, 3),
+            Constraint::Ratio(1, 3),
+        ])
+        .split(rows[0]);
+
+    let mut war_series = series_from_history(&snapshot.overlay.war_fatigue_history, 1.0);
+    let war_line = Sparkline::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("War Fatigue — front heat"),
+        )
+        .data(&war_series)
+        .max(war_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::LightRed));
+    frame.render_widget(war_line, top[0]);
+
+    let mut climate_series = series_from_history(&snapshot.overlay.carbon_history, 1.0);
+    let climate_line = Sparkline::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Carbon ppm — climate whip"),
+        )
+        .data(&climate_series)
+        .max(climate_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::Yellow));
+    frame.render_widget(climate_line, top[1]);
+
+    let mut pop_series: Vec<u64> = snapshot
+        .science_victory
+        .population_history
+        .iter()
+        .rev()
+        .take(120)
+        .cloned()
+        .collect::<Vec<_>>()
+        .into_iter()
+        .rev()
+        .collect();
+    ensure_nonempty(&mut pop_series);
+    let population_line = Sparkline::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Population — boom/bust waves"),
+        )
+        .data(&pop_series)
+        .max(pop_series.iter().cloned().max().unwrap_or(1))
+        .style(Style::default().fg(Color::LightGreen));
+    frame.render_widget(population_line, top[2]);
+
+    let bottom = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Ratio(1, 3),
+            Constraint::Ratio(1, 3),
+            Constraint::Ratio(1, 3),
+        ])
+        .split(rows[1]);
+
+    let (eco_pairs, eco_max) = build_metric_bar_data(snapshot, |m| m.economy, 5);
+    let eco_refs: Vec<(&str, u64)> = eco_pairs
+        .iter()
+        .map(|(name, value)| (name.as_str(), *value))
+        .collect();
+    let econ_bars = BarChart::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Economy — surplus race"),
+        )
+        .data(&eco_refs)
+        .max(eco_max)
+        .bar_width(6)
+        .bar_gap(1)
+        .bar_style(Style::default().fg(Color::LightGreen))
+        .value_style(Style::default().fg(Color::White).bold());
+    frame.render_widget(econ_bars, bottom[0]);
+
+    let (mil_pairs, mil_max) = build_metric_bar_data(snapshot, |m| m.military, 5);
+    let mil_refs: Vec<(&str, u64)> = mil_pairs
+        .iter()
+        .map(|(name, value)| (name.as_str(), *value))
+        .collect();
+    let war_bars = BarChart::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Military — mobilization"),
+        )
+        .data(&mil_refs)
+        .max(mil_max)
+        .bar_width(6)
+        .bar_gap(1)
+        .bar_style(Style::default().fg(Color::LightRed))
+        .value_style(Style::default().fg(Color::White).bold());
+    frame.render_widget(war_bars, bottom[1]);
+
+    let (science_pairs, science_max) = build_metric_bar_data(snapshot, |m| m.science, 5);
+    let science_refs: Vec<(&str, u64)> = science_pairs
+        .iter()
+        .map(|(name, value)| (name.as_str(), *value))
+        .collect();
+    let science_bars = BarChart::default()
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Science — breakthrough tempo"),
+        )
+        .data(&science_refs)
+        .max(science_max)
+        .bar_width(6)
+        .bar_gap(1)
+        .bar_style(Style::default().fg(Color::Cyan))
+        .value_style(Style::default().fg(Color::White).bold());
+    frame.render_widget(science_bars, bottom[2]);
+}
+
 fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
     let mut counts: HashMap<&'static str, u64> = HashMap::new();
     let mut sentiment_score: HashMap<&'static str, i64> = HashMap::new();
