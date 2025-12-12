@@ -12,7 +12,7 @@ use crate::simulation::{format_number_commas, Nation, ObserverSnapshot};
 use crate::ui::charts::{
     heat_bar, render_evolutionary_charts, render_science_progress_panel,
 };
-use super::ControlState;
+use super::{ControlState, MODERN_THEME};
 
 pub fn render_world_state_panel(
     frame: &mut Frame,
@@ -20,11 +20,14 @@ pub fn render_world_state_panel(
     snapshot: &ObserverSnapshot,
     control: &ControlState,
 ) {
-    let outer_block = Block::default()
-        .title("TACTICAL STATUS — civ health / war posture")
-        .borders(Borders::ALL)
-        .style(Style::default().bg(Color::Black).fg(Color::White));
-    frame.render_widget(outer_block, area);
+    let outer_block = Block::bordered()
+        .title(" TACTICAL STATUS ")
+        .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(MODERN_THEME.border));
+    
+    frame.render_widget(outer_block.clone(), area);
+    let area = outer_block.inner(area); // Use inner area for content
 
     let panel_layout = Layout::default()
         .direction(Direction::Vertical)

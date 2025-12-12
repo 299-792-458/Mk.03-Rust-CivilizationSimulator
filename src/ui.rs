@@ -13,9 +13,36 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
+    widgets::{Block, BorderType, Borders, Cell, Clear, Paragraph, Row, Table},
 };
 use std::time::Duration;
+
+// --- MODERN THEME DEFINITION ---
+pub struct Theme {
+    pub bg: Color,
+    pub panel_bg: Color,
+    pub border: Color,
+    pub text_main: Color,
+    pub text_dim: Color,
+    pub accent_a: Color, // Cyan-ish
+    pub accent_b: Color, // Pink-ish
+    pub success: Color,
+    pub warning: Color,
+    pub danger: Color,
+}
+
+pub const MODERN_THEME: Theme = Theme {
+    bg: Color::Rgb(10, 10, 15), // Deep dark blue-black
+    panel_bg: Color::Rgb(15, 15, 22),
+    border: Color::Rgb(60, 70, 90), // Slate gray
+    text_main: Color::Rgb(225, 230, 240), // Off-white
+    text_dim: Color::Rgb(120, 130, 150), // Dim gray
+    accent_a: Color::Rgb(0, 190, 255), // Cyan
+    accent_b: Color::Rgb(255, 50, 150), // Pink/Magenta
+    success: Color::Rgb(50, 255, 120),
+    warning: Color::Rgb(255, 200, 50),
+    danger: Color::Rgb(255, 60, 80),
+};
 
 #[derive(Debug, Clone)]
 pub struct ControlState {
@@ -108,155 +135,102 @@ impl LogFilter {
 
 /// Renders UI and returns the map area used for click mapping.
 pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlState) -> Rect {
-    // Force a uniform black background across the entire viewport.
-    let full_bg = Block::default().style(Style::default().bg(Color::Rgb(0, 0, 0)));
+    // Force a uniform dark background using Clear + Block
+    let full_bg = Block::new().style(Style::default().bg(MODERN_THEME.bg));
+    frame.render_widget(Clear, frame.size());
     frame.render_widget(full_bg, frame.size());
 
-    // Main layout
+    // Main layout with slight margin to frame the UI
+    let root_area = frame.size();
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(4),
-            Constraint::Length(5),
-            Constraint::Min(0),
+            Constraint::Length(3), // Header (Compact)
+            Constraint::Length(5), // Control Deck
+            Constraint::Min(0),    // Main Content
         ])
-        .split(frame.size());
+        .split(root_area);
 
-    // Header
+    // --- Header ---
     let mut header_lines = vec![
         Line::from(vec![
             Span::styled(
-                "[ SUB-COMMAND BRIDGE ]",
-                Style::default().fg(Color::LightGreen).bold(),
+                " COMMAND BRIDGE ",
+                Style::default().fg(MODERN_THEME.bg).bg(MODERN_THEME.accent_a).bold(),
             ),
-            Span::raw("  "),
+            Span::raw(" "),
             Span::styled(
                 format!("Epoch {} / {}", snapshot.epoch, snapshot.season),
-                Style::default().fg(Color::Cyan),
+                Style::default().fg(MODERN_THEME.text_main),
             ),
             Span::raw("  "),
             Span::styled(
-                format!("COSMIC {:.1}e8y", snapshot.cosmic_age_years / 100_000_000.0),
-                Style::default().fg(Color::Gray),
+                format!("COSMIC {:.2}e8y", snapshot.cosmic_age_years / 100_000_000.0),
+                Style::default().fg(MODERN_THEME.text_dim),
             ),
         ]),
         Line::from(vec![
-            Span::styled("Atmos ", Style::default().fg(Color::Yellow)),
             Span::styled(
-                &snapshot.season_effect.label,
-                Style::default().fg(Color::LightYellow).bold(),
+                format!(" {} ", snapshot.season_effect.label),
+                Style::default().fg(MODERN_THEME.warning).bold(),
             ),
-            Span::raw(" · "),
             Span::styled(
                 format!(
-                    "ΔT {:+.1}  Morale {:+.1}%  Yield {:+.1}%  Risk {:+.1}%",
+                    " ΔT {:+.1}  Morale {:+.1}%  Yield {:+.1}%  Risk {:+.1}%",
                     snapshot.season_effect.temperature * 10.0,
                     snapshot.season_effect.morale_shift,
                     snapshot.season_effect.yield_shift,
                     snapshot.season_effect.risk_shift
                 ),
-                Style::default().fg(Color::White),
+                Style::default().fg(MODERN_THEME.text_dim),
             ),
-            Span::raw(" · "),
+            Span::raw("  "),
             Span::styled(
-                format!("Sea {:.0}% Ice {:.0}%", snapshot.overlay.sea_level * 100.0, snapshot.overlay.ice_line * 100.0),
-                Style::default().fg(Color::Blue),
+                narrative_ticker(snapshot),
+                Style::default().fg(MODERN_THEME.text_main).italic(),
             ),
         ]),
     ];
+    
+    // Add victory status if applicable
     if snapshot.science_victory.finished {
-        header_lines.push(Line::from(Span::styled(
-            "Spacefaring civilization achieved — simulation stabilizing",
-            Style::default().fg(Color::LightGreen).bold(),
-        )));
-    } else if snapshot.science_victory.interstellar_mode {
-        header_lines.push(Line::from(Span::styled(
-            "Interstellar expansion underway",
-            Style::default().fg(Color::Cyan).bold(),
-        )));
-    }
-    header_lines.push(Line::from(vec![
-        Span::styled("Chronicle ", Style::default().fg(Color::LightYellow).bold()),
-        Span::raw("→ "),
-        Span::styled(
-            narrative_ticker(snapshot),
-            Style::default().fg(Color::White),
-        ),
-    ]));
-    header_lines.push(Line::from(vec![
-        Span::styled(
-            format!(
-                "Cosmic {:.2}e8 yrs",
-                snapshot.cosmic_age_years / 100_000_000.0
-            ),
-            Style::default().fg(Color::LightBlue),
-        ),
-        Span::raw(" | "),
-        Span::styled(
-            format!("Stage {}", snapshot.geologic_stage),
-            Style::default().fg(Color::Cyan),
-        ),
-        Span::raw(" | "),
-        Span::styled(
-            format!("Extinctions {}", snapshot.extinction_events),
-            Style::default().fg(Color::Magenta),
-        ),
-        Span::raw(" | "),
-        Span::styled(
-            format!("Scale {:.0}y/tick", snapshot.timescale_years_per_tick),
-            Style::default().fg(Color::Gray),
-        ),
-        Span::raw(" | "),
-        Span::styled(
-            format!("Sea {:.0}%", snapshot.overlay.sea_level * 100.0),
-            Style::default().fg(Color::Blue),
-        ),
-        Span::raw(" | "),
-        Span::styled(
-            format!(
-                "Alliances {} · Sanctions {}",
-                snapshot.diplomacy.alliances.len(),
-                snapshot.diplomacy.sanctions.len()
-            ),
-            Style::default().fg(Color::Magenta),
-        ),
-    ]));
-    if let Some(pin) = control.pinned_nation {
-        header_lines.push(Line::from(vec![
-            Span::styled("PIN ", Style::default().fg(Color::LightCyan).bold()),
-            Span::raw(pin.name()),
-        ]));
+         header_lines[0].spans.push(Span::styled(
+            " [VICTORY ACHIEVED]",
+            Style::default().fg(MODERN_THEME.success).bold(),
+        ));
     }
 
-    let header_paragraph = Paragraph::new(header_lines).block(
-        Block::new()
-            .borders(Borders::TOP)
-            .title("TACTICAL CONSOLE — LIVE FEED")
-            .style(Style::default().bg(Color::Black).fg(Color::White)),
-    );
+    let header_block = Block::default()
+        .borders(Borders::BOTTOM)
+        .border_style(Style::default().fg(MODERN_THEME.border))
+        .style(Style::default().bg(MODERN_THEME.bg)); // Blend with bg
+    
+    let header_paragraph = Paragraph::new(header_lines).block(header_block);
     frame.render_widget(header_paragraph, main_layout[0]);
+
+    // --- Control Deck ---
     render_control_deck(frame, main_layout[1], snapshot, control);
 
-    // Create a two-column tactical layout: left = map + graphs, right = status + events.
+    // --- Main Content (Map + Panels) ---
+    // Split into Left (Map + Graphs) and Right (Status + Events)
     let content_layout = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(58), Constraint::Percentage(42)])
+        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
         .split(main_layout[2]);
 
+    // Left Column: Map (Top) + Graphs (Bottom)
     let left_column = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
+        .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
         .split(content_layout[0]);
 
+    // Right Column: World State (Top) + Events (Bottom)
     let right_column = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Percentage(55), Constraint::Percentage(45)])
         .split(content_layout[1]);
 
-    // World State Panel on the right
-    render_world_state_panel(frame, right_column[0], snapshot, control);
-
-    // Map Widget on the left (top)
+    // --- Map Widget ---
     let map_widget = MapWidget {
         snapshot,
         overlay: control.map_overlay,
@@ -264,30 +238,44 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         focus: control
             .focus_mode
             .then(|| control.pinned_nation.or(control.selected_owner))
-        .flatten(),
+            .flatten(),
     };
-    let map_block = Block::default()
-        .borders(Borders::ALL)
-        .title("THEATER MAP — combat & control zones")
-        .style(Style::default().bg(Color::Black).fg(Color::White));
+    let map_block = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .title(" THEATER MAP ")
+        .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
+        .border_style(Style::default().fg(MODERN_THEME.border))
+        .style(Style::default().bg(MODERN_THEME.bg)); // Ensure map bg is dark
+    
     let map_area = map_block.inner(left_column[0]);
     frame.render_widget(map_block, left_column[0]);
     frame.render_widget(map_widget, map_area);
 
-    // Graphs beneath the map
-    render_indicator_grid(frame, left_column[1], snapshot);
+    // --- Graphs ---
+    // Wrap graphs in a block for cleaner look
+    let graph_block = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .title(" METRICS ")
+        .border_style(Style::default().fg(MODERN_THEME.border));
+    let graph_area = graph_block.inner(left_column[1]);
+    frame.render_widget(graph_block, left_column[1]);
+    render_indicator_grid(frame, graph_area, snapshot);
 
-    // Event Log Panel - Using a Table for alignment
+    // --- World State Panel ---
+    render_world_state_panel(frame, right_column[0], snapshot, control);
+
+    // --- Event Log Panel ---
+    // Event Log - Using a Table for alignment
     let header_cells = [
         "Nation",
         "Tick",
         "Category",
         "Actor/Source",
         "Details",
-        "Impact/Level",
+        "Impact",
     ]
     .iter()
-    .map(|h| Cell::from(*h).style(Style::default().fg(Color::White).bold()));
+    .map(|h| Cell::from(*h).style(Style::default().fg(MODERN_THEME.text_dim).bold()));
     let header = Row::new(header_cells).height(1).bottom_margin(1);
 
     let rows: Vec<Row> = snapshot
@@ -306,66 +294,43 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         })
         .take(20)
         .map(|event| {
-            let (nation_cell, style) = match &event.kind {
-                WorldEventKind::Trade { actor, .. } => {
-                    let color = actor.nation.color();
-                    (
-                        Cell::from(actor.nation.name()).style(Style::default().fg(color)),
-                        Style::default().fg(Color::Green),
-                    )
-                }
-                WorldEventKind::Social { convener, .. } => {
-                    let color = convener.nation.color();
-                    (
-                        Cell::from(convener.nation.name()).style(Style::default().fg(color)),
-                        Style::default().fg(Color::Green),
-                    )
-                }
-                WorldEventKind::MacroShock { .. } => {
-                    (Cell::from("System"), Style::default().fg(Color::Yellow))
-                }
-                WorldEventKind::Warfare { winner, .. } => {
-                    let color = winner.color();
-                    (
-                        Cell::from(winner.name()).style(Style::default().fg(color)),
-                        Style::default().fg(Color::Red),
-                    )
-                }
-                WorldEventKind::EraShift { nation, .. } => {
-                    let color = nation.color();
-                    (
-                        Cell::from(nation.name()).style(Style::default().fg(color)),
-                        Style::default().fg(Color::Cyan),
-                    )
-                }
-                WorldEventKind::ScienceProgress { nation, .. } => {
-                    let color = nation.color();
-                    (
-                        Cell::from(nation.name()).style(Style::default().fg(color)),
-                        Style::default().fg(Color::LightCyan),
-                    )
-                }
-                WorldEventKind::ScienceVictory { winner, .. } => {
-                    let color = winner.color();
-                    (
-                        Cell::from(winner.name()).style(Style::default().fg(color)),
-                        Style::default().fg(Color::Green),
-                    )
-                }
-                WorldEventKind::InterstellarProgress { leader, .. } => {
-                    let color = leader.color();
-                    (
-                        Cell::from(leader.name()).style(Style::default().fg(color)),
-                        Style::default().fg(Color::Cyan),
-                    )
-                }
-                WorldEventKind::InterstellarVictory { winner, .. } => {
-                    let color = winner.color();
-                    (
-                        Cell::from(winner.name()).style(Style::default().fg(color)),
-                        Style::default().fg(Color::LightGreen),
-                    )
-                }
+            let (nation_cell, base_color) = match &event.kind {
+                WorldEventKind::Trade { actor, .. } => (
+                    Cell::from(actor.nation.name()).style(Style::default().fg(actor.nation.color())),
+                    MODERN_THEME.success,
+                ),
+                WorldEventKind::Social { convener, .. } => (
+                    Cell::from(convener.nation.name()).style(Style::default().fg(convener.nation.color())),
+                    MODERN_THEME.accent_a,
+                ),
+                WorldEventKind::MacroShock { .. } => (
+                    Cell::from("System"),
+                    MODERN_THEME.warning,
+                ),
+                WorldEventKind::Warfare { winner, .. } => (
+                    Cell::from(winner.name()).style(Style::default().fg(winner.color())),
+                    MODERN_THEME.danger,
+                ),
+                WorldEventKind::EraShift { nation, .. } => (
+                    Cell::from(nation.name()).style(Style::default().fg(nation.color())),
+                    MODERN_THEME.accent_b,
+                ),
+                WorldEventKind::ScienceProgress { nation, .. } => (
+                    Cell::from(nation.name()).style(Style::default().fg(nation.color())),
+                    MODERN_THEME.accent_a,
+                ),
+                WorldEventKind::ScienceVictory { winner, .. } => (
+                    Cell::from(winner.name()).style(Style::default().fg(winner.color())),
+                    MODERN_THEME.success,
+                ),
+                WorldEventKind::InterstellarProgress { leader, .. } => (
+                    Cell::from(leader.name()).style(Style::default().fg(leader.color())),
+                    MODERN_THEME.accent_a,
+                ),
+                WorldEventKind::InterstellarVictory { winner, .. } => (
+                    Cell::from(winner.name()).style(Style::default().fg(winner.color())),
+                    MODERN_THEME.success,
+                ),
             };
 
             let pinned_hit = control
@@ -399,12 +364,12 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
                     casualties,
                 } => {
                     let casualty_str = casualties
-                        .map(|c| format!("Casualties {}", format_number_commas(c)))
-                        .unwrap_or_else(|| "Casualties None".to_string());
+                        .map(|c| format!("Kill {}", format_number_commas(c)))
+                        .unwrap_or_else(|| "".to_string());
                     (
                         stressor.clone(),
                         catalyst.clone(),
-                        format!("{projected_impact} | {casualty_str}"),
+                        format!("{} {}", projected_impact, casualty_str),
                     )
                 }
                 WorldEventKind::Warfare {
@@ -417,10 +382,10 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
                     winner.name().to_string(),
                     format!("vs {}", loser.name()),
                     format!(
-                        "+{:.2} territory | Casualties {}{}",
+                        "+{:.1}km² | Kill {}{}",
                         territory_change,
                         format_number_commas(*casualties),
-                        if *nuclear { " | Nuke" } else { "" }
+                        if *nuclear { " [NUKE]" } else { "" }
                     ),
                 ),
                 WorldEventKind::EraShift {
@@ -434,38 +399,38 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
                 ),
                 WorldEventKind::ScienceProgress { nation, progress } => (
                     nation.name().to_string(),
-                    "Moon Exploration".to_string(),
-                    format!("{progress:.1}% Achieved"),
+                    "Moon Project".to_string(),
+                    format!("{progress:.1}%"),
                 ),
                 WorldEventKind::ScienceVictory { winner, progress } => (
                     winner.name().to_string(),
-                    "Science Victory".to_string(),
-                    format!("{progress:.1}% Complete"),
+                    "Science Win".to_string(),
+                    format!("{progress:.1}%"),
                 ),
                 WorldEventKind::InterstellarProgress { leader, progress } => (
                     leader.name().to_string(),
-                    "Interstellar Migration".to_string(),
-                    format!("{progress:.1}% Achieved"),
+                    "Interstellar".to_string(),
+                    format!("{progress:.1}%"),
                 ),
                 WorldEventKind::InterstellarVictory { winner, progress } => (
                     winner.name().to_string(),
-                    "Interstellar Victory".to_string(),
-                    format!("{progress:.1}% Complete"),
+                    "Galactic Win".to_string(),
+                    format!("{progress:.1}%"),
                 ),
             };
 
             let cells = vec![
                 nation_cell,
                 Cell::from(event.tick.to_string()),
-                Cell::from(event.category()),
+                Cell::from(event.category()).style(Style::default().fg(base_color)),
                 Cell::from(actor),
                 Cell::from(details),
                 Cell::from(impact),
             ];
 
-            let mut row_style = style;
+            let mut row_style = Style::default().fg(MODERN_THEME.text_main);
             if pinned_hit {
-                row_style = row_style.bold().fg(Color::White);
+                row_style = row_style.bg(Color::Rgb(20, 20, 40)).bold();
             }
             Row::new(cells).height(1).style(row_style)
         })
@@ -478,30 +443,33 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
             Constraint::Length(5),
             Constraint::Length(10),
             Constraint::Length(15),
-            Constraint::Min(22),
-            Constraint::Length(18),
+            Constraint::Min(20),
+            Constraint::Length(20),
         ],
     )
     .header(header)
     .block(
-        Block::default()
-            .title("SIGINT FEED — engagements | trade | shocks")
-            .borders(Borders::ALL)
-            .style(Style::default().bg(Color::Rgb(0, 0, 0)).fg(Color::White)),
+        Block::bordered()
+            .border_type(BorderType::Rounded)
+            .title(" SIGINT FEED ")
+            .title_style(Style::default().fg(MODERN_THEME.accent_b).bold())
+            .border_style(Style::default().fg(MODERN_THEME.border))
+            .style(Style::default().bg(MODERN_THEME.bg)),
     );
 
     let event_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),
-            Constraint::Length(6),
-            Constraint::Min(0),
+            Constraint::Length(3), // Diagnostics
+            Constraint::Length(8), // Leaderboard (Slightly larger)
+            Constraint::Min(0),    // Table
         ])
         .split(right_column[1]);
 
     render_diagnostics_strip(frame, event_layout[0], snapshot, control);
     render_event_leaderboard(frame, event_layout[1], snapshot);
     frame.render_widget(table, event_layout[2]);
+    
     map_area
 }
 
@@ -602,58 +570,42 @@ fn render_diagnostics_strip(
 
     let lines = vec![Line::from(vec![
         Span::styled(
+            format!("LOG: {}", control.log_filter.label()),
+            Style::default().fg(MODERN_THEME.accent_a).bold(),
+        ),
+        Span::raw(" | "),
+        Span::styled(
             format!(
-                "Log {}{}",
-                control.log_filter.label(),
-                if control.log_pin_selected {
-                    " (PIN)"
-                } else {
-                    ""
-                }
+                "PIN: {}",
+                control
+                    .pinned_nation
+                    .map(|n| n.name().to_string())
+                    .unwrap_or_else(|| "None".to_string())
             ),
-            Style::default().fg(Color::Cyan).bold(),
+            Style::default().fg(MODERN_THEME.accent_b),
         ),
-        Span::raw(" · PIN "),
+        Span::raw(" | "),
         Span::styled(
-            control
-                .pinned_nation
-                .map(|n| n.name().to_string())
-                .unwrap_or_else(|| "None".to_string()),
-            Style::default().fg(Color::Magenta),
+            format!("War Δ {:+.2}", war_trend),
+            Style::default().fg(if war_trend > 0.0 { MODERN_THEME.danger } else { MODERN_THEME.success }),
         ),
-        Span::raw(" · War Fatigue Δ "),
+        Span::raw(" | "),
         Span::styled(
-            format!("{:+.2}", war_trend),
-            Style::default()
-                .fg(Color::Red)
-                .add_modifier(Modifier::RAPID_BLINK),
+            format!("CO2 Δ {:+.1}", carbon_trend),
+            Style::default().fg(MODERN_THEME.warning),
         ),
-        Span::raw(" · Carbon Δ "),
+        Span::raw(" | "),
         Span::styled(
-            format!("{:+.1}", carbon_trend),
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::RAPID_BLINK),
-        ),
-        Span::raw(" · Population Δ "),
-        Span::styled(
-            format_number_commas(pop_trend.max(0.0) as u64),
-            Style::default()
-                .fg(Color::Green)
-                .add_modifier(Modifier::RAPID_BLINK),
-        ),
-        Span::raw(" · Alliances "),
-        Span::styled(
-            snapshot.diplomacy.alliances.len().to_string(),
-            Style::default().fg(Color::Magenta),
-        ),
-        Span::raw(" · Sanctions "),
-        Span::styled(
-            snapshot.diplomacy.sanctions.len().to_string(),
-            Style::default().fg(Color::Gray),
+            format!("Pop Δ {}", format_number_commas(pop_trend.max(0.0) as u64)),
+            Style::default().fg(MODERN_THEME.success),
         ),
     ])];
-    frame.render_widget(Paragraph::new(lines), area);
+    
+    let block = Block::default()
+        .borders(Borders::BOTTOM)
+        .border_style(Style::default().fg(MODERN_THEME.border));
+        
+    frame.render_widget(Paragraph::new(lines).block(block), area);
 }
 
 fn narrative_ticker(snapshot: &ObserverSnapshot) -> String {
@@ -663,21 +615,21 @@ fn narrative_ticker(snapshot: &ObserverSnapshot) -> String {
             WorldEventKind::Trade {
                 actor, trade_focus, ..
             } => {
-                format!("{} Trade — {}", actor.nation.name(), trade_focus)
+                format!("{} Trade {}", actor.nation.name(), trade_focus)
             }
             WorldEventKind::Social {
                 convener,
                 gathering_theme,
                 ..
             } => {
-                format!("{} Gathering — {}", convener.nation.name(), gathering_theme)
+                format!("{} {}", convener.nation.name(), gathering_theme)
             }
             WorldEventKind::MacroShock {
                 stressor,
                 projected_impact,
                 ..
             } => {
-                format!("Shock {} → {}", stressor, projected_impact)
+                format!("Shock {} ({})", stressor, projected_impact)
             }
             WorldEventKind::Warfare {
                 winner,
@@ -686,34 +638,33 @@ fn narrative_ticker(snapshot: &ObserverSnapshot) -> String {
                 ..
             } => {
                 format!(
-                    "{} {} {}{}",
+                    "{} vs {} {}",
                     winner.name(),
-                    if *nuclear { "Nuke" } else { "War" },
                     loser.name(),
-                    if *nuclear { "!" } else { "" }
+                    if *nuclear { "[NUKE]" } else { "" }
                 )
             }
             WorldEventKind::EraShift { nation, era, .. } => {
-                format!("{} Era Rise → {}", nation.name(), era.label())
+                format!("{} Era {}", nation.name(), era.label())
             }
             WorldEventKind::ScienceProgress { nation, progress } => {
                 format!("{} Moon {:.0}%", nation.name(), progress)
             }
             WorldEventKind::ScienceVictory { winner, .. } => {
-                format!("{} Science Victory", winner.name())
+                format!("{} Science Win", winner.name())
             }
             WorldEventKind::InterstellarProgress { leader, progress } => {
-                format!("{} Interstellar {:.0}%", leader.name(), progress)
+                format!("{} Space {:.0}%", leader.name(), progress)
             }
             WorldEventKind::InterstellarVictory { winner, .. } => {
-                format!("{} Space Civ", winner.name())
+                format!("{} Galactic Civ", winner.name())
             }
         };
         snippets.push(snippet);
     }
 
     if snippets.is_empty() {
-        "Quiet Moment — collecting data".to_string()
+        "Systems Nominal".to_string()
     } else {
         snippets.join(" · ")
     }
