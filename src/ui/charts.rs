@@ -176,7 +176,7 @@ pub fn render_indicator_grid(
     snapshot: &ObserverSnapshot,
 ) {
     let block = Block::default()
-        .title("Graph Deck — Civilization Pulseboard")
+        .title("[ SENSOR GRID ] Pulseboard — live vertical spans")
         .borders(Borders::ALL);
     let inner = block.inner(area);
     frame.render_widget(block, area);
