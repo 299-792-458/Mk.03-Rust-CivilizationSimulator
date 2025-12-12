@@ -543,7 +543,10 @@ pub fn render_glory_tiles(frame: &mut Frame, area: Rect, snapshot: &ObserverSnap
 }
 
 pub fn render_war_theater_panel(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
-    let block = Block::default().borders(Borders::ALL).title("War Theater");
+    let block = Block::bordered()
+        .border_type(BorderType::Rounded)
+        .border_style(Style::default().fg(MODERN_THEME.border))
+        .title(" War Theater ");
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
