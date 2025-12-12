@@ -4,7 +4,7 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Sparkline, Table, Wrap},
+    widgets::{BarChart, Block, Borders, Cell, Paragraph, Row, Sparkline, Table, Wrap},
 };
 use std::collections::HashMap;
 use std::time::Duration;
@@ -246,7 +246,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     // Create a vertical layout for the main content area
     let content_layout = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+        .constraints([
+            Constraint::Percentage(52),
+            Constraint::Length(12),
+            Constraint::Percentage(36),
+        ])
         .split(main_layout[2]);
 
     // Top layout for world state and map
@@ -266,9 +270,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         focus: control
             .focus_mode
             .then(|| control.pinned_nation.or(control.selected_owner))
-            .flatten(),
+        .flatten(),
     };
     frame.render_widget(map_widget, top_layout[1]);
+
+    render_indicator_grid(frame, content_layout[1], snapshot);
 
     // Event Log Panel - Using a Table for alignment
     let header_cells = [
