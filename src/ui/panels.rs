@@ -353,8 +353,9 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
     let mut counts: HashMap<&'static str, u64> = HashMap::new();
     let mut sentiment_score: HashMap<&'static str, i64> = HashMap::new();
     let mut casualties_score: HashMap<&'static str, u64> = HashMap::new();
+    let mut recent_counts: HashMap<&'static str, u64> = HashMap::new();
 
-    for event in snapshot.events.iter().rev().take(120) {
+    for (idx, event) in snapshot.events.iter().rev().take(120).enumerate() {
         let cat = event.category();
         *counts.entry(cat).or_default() += 1;
         let delta = match event.sentiment() {
@@ -364,6 +365,9 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
         };
         *sentiment_score.entry(cat).or_default() += delta;
         *casualties_score.entry(cat).or_default() += casualties_from_event(event);
+        if idx < 20 {
+            *recent_counts.entry(cat).or_default() += 1;
+        }
     }
 
     let categories = [
@@ -377,6 +381,7 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
     ];
     let max_count = counts.values().cloned().max().unwrap_or(1);
     let max_casualties = casualties_score.values().cloned().max().unwrap_or(1).max(1);
+    let total_events: u64 = counts.values().sum::<u64>().max(1);
 
     let rows: Vec<Row> = categories
         .iter()
@@ -384,6 +389,8 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
             let count = counts.get(cat).cloned().unwrap_or(0);
             let score = sentiment_score.get(cat).cloned().unwrap_or(0);
             let casualties = casualties_score.get(cat).cloned().unwrap_or(0);
+            let recent = recent_counts.get(cat).cloned().unwrap_or(0);
+            let share = (count as f32 / total_events as f32) * 100.0;
             let bar = heat_bar(count, max_count, 12);
             let casualty_bar = heat_bar(
                 // scale down casualty display to thousands for readability
@@ -394,8 +401,10 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
             Row::new(vec![
                 Cell::from(*cat),
                 Cell::from(count.to_string()),
+                Cell::from(recent.to_string()),
                 Cell::from(score.to_string()),
                 Cell::from(format_number_commas(casualties)),
+                Cell::from(format!("{share:4.1}%")),
                 Cell::from(format!("{bar} | {casualty_bar}")),
             ])
         })
@@ -408,15 +417,18 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
             Constraint::Length(6),
             Constraint::Length(6),
             Constraint::Length(12),
-            Constraint::Min(18),
+            Constraint::Length(9),
+            Constraint::Min(22),
         ],
     )
     .header(
         Row::new(vec![
             "Type",
             "Count",
+            "Recent20",
             "Sentiment",
             "Casualties",
+            "Share",
             "Count ▓ | Casualties ░",
         ])
             .style(Style::default().fg(Color::White).bold()),
