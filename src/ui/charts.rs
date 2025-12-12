@@ -2,7 +2,7 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::Line,
-    widgets::{BarChart, Block, BorderType, Borders, Paragraph, Sparkline},
+    widgets::{BarChart, Block, BorderType, Paragraph, Sparkline},
 };
 
 use crate::simulation::ObserverSnapshot;
