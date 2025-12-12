@@ -146,7 +146,9 @@ pub fn render_control_deck(
         ]),
         Line::from("Mouse: top-left [-][+][R] buttons usable"),
     ];
-    let status_paragraph = Paragraph::new(status_lines).wrap(Wrap { trim: true });
+    let status_paragraph = Paragraph::new(status_lines)
+        .wrap(Wrap { trim: true })
+        .style(Style::default().bg(Color::Black).fg(Color::White));
     frame.render_widget(status_paragraph, columns[0]);
 
     let preset_rows: Vec<Row> = control
