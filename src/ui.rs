@@ -1425,7 +1425,7 @@ fn render_indicator_grid(frame: &mut Frame, area: Rect, snapshot: &ObserverSnaps
         ])
         .split(rows[0]);
 
-    let mut war_series = series_from_history(&snapshot.overlay.war_fatigue_history, 1.0);
+    let war_series = series_from_history(&snapshot.overlay.war_fatigue_history, 1.0);
     let war_line = Sparkline::default()
         .block(
             Block::default()
@@ -1437,7 +1437,7 @@ fn render_indicator_grid(frame: &mut Frame, area: Rect, snapshot: &ObserverSnaps
         .style(Style::default().fg(Color::LightRed));
     frame.render_widget(war_line, top[0]);
 
-    let mut climate_series = series_from_history(&snapshot.overlay.carbon_history, 1.0);
+    let climate_series = series_from_history(&snapshot.overlay.carbon_history, 1.0);
     let climate_line = Sparkline::default()
         .block(
             Block::default()
