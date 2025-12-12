@@ -219,9 +219,9 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     let content_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage(60),
-            Constraint::Percentage(18),
-            Constraint::Percentage(22),
+            Constraint::Percentage(50),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
         ])
         .split(main_layout[2]);
 
@@ -463,11 +463,11 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     let event_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(2),
-            Constraint::Length(4),
+            Constraint::Length(3),
+            Constraint::Length(6),
             Constraint::Min(0),
         ])
-        .split(content_layout[1]);
+        .split(content_layout[2]);
 
     render_diagnostics_strip(frame, event_layout[0], snapshot, control);
     render_event_leaderboard(frame, event_layout[1], snapshot);
