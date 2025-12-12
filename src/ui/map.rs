@@ -5,7 +5,7 @@ use ratatui::{
 };
 
 use crate::simulation::{AxialCoord, Nation, ObserverSnapshot};
-use crate::ui::MapOverlay;
+use crate::ui::{MapOverlay, MODERN_THEME};
 
 const WORLD_ATLAS: &str = r#"
 ............................................................................................................................
