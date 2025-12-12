@@ -477,6 +477,74 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     top_layout[1]
 }
 
+fn point_in_rect(x: u16, y: u16, area: Rect) -> bool {
+    x >= area.x && x < area.x + area.width && y >= area.y && y < area.y + area.height
+}
+
+fn screen_to_axial(area: Rect, x: u16, y: u16) -> Option<AxialCoord> {
+    let center_x = area.x as i32 + area.width as i32 / 2;
+    let center_y = area.y as i32 + area.height as i32 / 2;
+    let r = y as i32 - center_y;
+    let q_term = x as i32 - center_x - r;
+    if q_term % 2 != 0 {
+        return None;
+    }
+    let q = q_term / 2;
+    Some(AxialCoord::new(q, r))
+}
+
+fn filter_event(
+    event: &crate::simulation::WorldEvent,
+    filter: LogFilter,
+    pinned: Option<crate::simulation::Nation>,
+) -> bool {
+    let passes = match filter {
+        LogFilter::All => true,
+        LogFilter::War => matches!(event.kind, WorldEventKind::Warfare { .. }),
+        LogFilter::TradeSocial => matches!(
+            event.kind,
+            WorldEventKind::Trade { .. } | WorldEventKind::Social { .. }
+        ),
+        LogFilter::ScienceSpace => matches!(
+            event.kind,
+            WorldEventKind::ScienceProgress { .. }
+                | WorldEventKind::ScienceVictory { .. }
+                | WorldEventKind::InterstellarProgress { .. }
+                | WorldEventKind::InterstellarVictory { .. }
+        ),
+        LogFilter::Diplomacy => matches!(
+            event.kind,
+            WorldEventKind::EraShift { .. }
+                | WorldEventKind::MacroShock { .. }
+                | WorldEventKind::Social { .. }
+        ),
+    };
+    if !passes {
+        return false;
+    }
+    if let Some(pin) = pinned {
+        return event_involves(event, pin);
+    }
+    true
+}
+
+fn event_involves(
+    event: &crate::simulation::WorldEvent,
+    nation: crate::simulation::Nation,
+) -> bool {
+    match &event.kind {
+        WorldEventKind::Trade { actor, .. } => actor.nation == nation,
+        WorldEventKind::Social { convener, .. } => convener.nation == nation,
+        WorldEventKind::MacroShock { .. } => false,
+        WorldEventKind::Warfare { winner, loser, .. } => *winner == nation || *loser == nation,
+        WorldEventKind::EraShift { nation: n, .. } => *n == nation,
+        WorldEventKind::ScienceProgress { nation: n, .. } => *n == nation,
+        WorldEventKind::ScienceVictory { winner, .. } => *winner == nation,
+        WorldEventKind::InterstellarProgress { leader, .. } => *leader == nation,
+        WorldEventKind::InterstellarVictory { winner, .. } => *winner == nation,
+    }
+}
+
 fn render_diagnostics_strip(
     frame: &mut Frame,
     area: Rect,
