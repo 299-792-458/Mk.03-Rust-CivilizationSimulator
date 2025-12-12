@@ -352,6 +352,7 @@ fn push_metric_bar(lines: &mut Vec<Line<'static>>, label: &str, value: f32, colo
 pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
     let mut counts: HashMap<&'static str, u64> = HashMap::new();
     let mut sentiment_score: HashMap<&'static str, i64> = HashMap::new();
+    let mut casualties_score: HashMap<&'static str, u64> = HashMap::new();
 
     for event in snapshot.events.iter().rev().take(120) {
         let cat = event.category();
@@ -362,6 +363,7 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
             crate::simulation::Sentiment::Neutral => 0,
         };
         *sentiment_score.entry(cat).or_default() += delta;
+        *casualties_score.entry(cat).or_default() += casualties_from_event(event);
     }
 
     let categories = [
@@ -374,18 +376,27 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
         "Era",
     ];
     let max_count = counts.values().cloned().max().unwrap_or(1);
+    let max_casualties = casualties_score.values().cloned().max().unwrap_or(1).max(1);
 
     let rows: Vec<Row> = categories
         .iter()
         .map(|cat| {
             let count = counts.get(cat).cloned().unwrap_or(0);
             let score = sentiment_score.get(cat).cloned().unwrap_or(0);
+            let casualties = casualties_score.get(cat).cloned().unwrap_or(0);
             let bar = heat_bar(count, max_count, 12);
+            let casualty_bar = heat_bar(
+                // scale down casualty display to thousands for readability
+                (casualties / 1_000).max(1),
+                (max_casualties / 1_000).max(1),
+                12,
+            );
             Row::new(vec![
                 Cell::from(*cat),
                 Cell::from(count.to_string()),
                 Cell::from(score.to_string()),
-                Cell::from(bar),
+                Cell::from(format_number_commas(casualties)),
+                Cell::from(format!("{bar} | {casualty_bar}")),
             ])
         })
         .collect();
@@ -396,11 +407,18 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
             Constraint::Length(8),
             Constraint::Length(6),
             Constraint::Length(6),
-            Constraint::Min(10),
+            Constraint::Length(12),
+            Constraint::Min(18),
         ],
     )
     .header(
-        Row::new(vec!["Type", "Count", "Sentiment", "Heat"])
+        Row::new(vec![
+            "Type",
+            "Count",
+            "Sentiment",
+            "Casualties",
+            "Count ▓ | Casualties ░",
+        ])
             .style(Style::default().fg(Color::White).bold()),
     )
     .block(
@@ -410,6 +428,14 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
     );
 
     frame.render_widget(table, area);
+}
+
+fn casualties_from_event(event: &crate::simulation::WorldEvent) -> u64 {
+    match &event.kind {
+        WorldEventKind::Warfare { casualties, .. } => *casualties,
+        WorldEventKind::MacroShock { casualties, .. } => casualties.unwrap_or(0),
+        _ => 0,
+    }
 }
 
 pub fn render_glory_tiles(frame: &mut Frame, area: Rect, snapshot: &ObserverSnapshot) {
