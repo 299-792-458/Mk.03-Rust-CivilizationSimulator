@@ -17,7 +17,8 @@ pub fn render_control_deck(
 ) {
     let block = Block::default()
         .title("COMMAND BRIDGE — tempo / overlay / filters")
-        .borders(Borders::ALL);
+        .borders(Borders::ALL)
+        .style(Style::default().bg(Color::Black).fg(Color::White));
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -266,7 +267,8 @@ pub fn render_control_deck(
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Legend / Overlay"),
+                .title("Legend / Overlay")
+                .style(Style::default().bg(Color::Black).fg(Color::White)),
         )
         .wrap(Wrap { trim: true });
     frame.render_widget(legend, side[1]);
