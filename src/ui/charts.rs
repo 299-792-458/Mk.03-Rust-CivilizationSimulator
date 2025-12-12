@@ -15,7 +15,7 @@ pub fn render_evolutionary_charts(
     snapshot: &ObserverSnapshot,
 ) {
     let block = Block::default()
-        .title("Evolutionary Markets — 5B-year portfolio")
+        .title("[ GRAPHICS ] Evolutionary Markets — 5B-year portfolio")
         .borders(Borders::ALL);
     let inner = block.inner(area);
     frame.render_widget(block, area);
