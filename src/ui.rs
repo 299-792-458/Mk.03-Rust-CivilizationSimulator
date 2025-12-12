@@ -233,26 +233,26 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     frame.render_widget(header_paragraph, main_layout[0]);
     render_control_deck(frame, main_layout[1], snapshot, control);
 
-    // Create a vertical layout for the main content area
+    // Create a two-column tactical layout: left = map + graphs, right = status + events.
     let content_layout = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage(50),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-        ])
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(58), Constraint::Percentage(42)])
         .split(main_layout[2]);
 
-    // Top layout for world state and map
-    let top_layout = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+    let left_column = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
         .split(content_layout[0]);
 
-    // World State Panel
-    render_world_state_panel(frame, top_layout[0], snapshot, control);
+    let right_column = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Percentage(55), Constraint::Percentage(45)])
+        .split(content_layout[1]);
 
-    // Map Widget
+    // World State Panel on the right
+    render_world_state_panel(frame, right_column[0], snapshot, control);
+
+    // Map Widget on the left (top)
     let map_widget = MapWidget {
         snapshot,
         overlay: control.map_overlay,
@@ -266,11 +266,12 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         .borders(Borders::ALL)
         .title("THEATER MAP — combat & control zones")
         .style(Style::default().bg(Color::Rgb(30, 20, 10)).fg(Color::White));
-    let map_area = map_block.inner(top_layout[1]);
-    frame.render_widget(map_block, top_layout[1]);
+    let map_area = map_block.inner(left_column[0]);
+    frame.render_widget(map_block, left_column[0]);
     frame.render_widget(map_widget, map_area);
 
-    render_indicator_grid(frame, content_layout[1], snapshot);
+    // Graphs beneath the map
+    render_indicator_grid(frame, left_column[1], snapshot);
 
     // Event Log Panel - Using a Table for alignment
     let header_cells = [
@@ -491,12 +492,12 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
             Constraint::Length(6),
             Constraint::Min(0),
         ])
-        .split(content_layout[2]);
+        .split(right_column[1]);
 
     render_diagnostics_strip(frame, event_layout[0], snapshot, control);
     render_event_leaderboard(frame, event_layout[1], snapshot);
     frame.render_widget(table, event_layout[2]);
-    top_layout[1]
+    map_area
 }
 
 fn filter_event(
