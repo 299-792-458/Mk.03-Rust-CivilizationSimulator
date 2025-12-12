@@ -2,7 +2,7 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, Wrap},
+    widgets::{Block, BorderType, Cell, Paragraph, Row, Table, Wrap},
 };
 
 use super::{ControlState, MODERN_THEME};
