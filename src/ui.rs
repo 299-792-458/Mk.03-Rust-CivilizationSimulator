@@ -8,14 +8,12 @@ use crate::simulation::{AxialCoord, Nation, ObserverSnapshot, format_number_comm
 use charts::render_indicator_grid;
 use control::render_control_deck;
 use map::MapWidget;
-use panels::{
-    render_event_leaderboard, render_glory_tiles, render_war_theater_panel, render_world_state_panel,
-};
+use panels::{render_event_leaderboard, render_world_state_panel};
 use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table, Wrap},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Table},
 };
 use std::time::Duration;
 
