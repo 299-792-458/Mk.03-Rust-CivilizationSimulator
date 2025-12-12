@@ -596,39 +596,6 @@ fn series_from_history(history: &[f32], scale: f32) -> Vec<u64> {
     mapped
 }
 
-fn build_metric_bar_data<F>(
-    snapshot: &ObserverSnapshot,
-    selector: F,
-    cap: usize,
-) -> (Vec<(String, u64)>, u64)
-where
-    F: Fn(&crate::simulation::resources::NationMetrics) -> f32,
-{
-    let mut entries: Vec<(String, u64)> = snapshot
-        .all_metrics
-        .0
-        .iter()
-        .map(|(nation, metrics)| {
-            (
-                nation.name().to_string(),
-                selector(metrics).max(0.0).round() as u64,
-            )
-        })
-        .collect();
-    entries.sort_by(|a, b| b.1.cmp(&a.1));
-    entries.truncate(cap);
-    let max_value = entries.iter().map(|(_, v)| *v).max().unwrap_or(1).max(1);
-    (entries, max_value)
-}
-
-fn heat_bar(value: u64, max: u64, width: usize) -> String {
-    let max = max.max(1);
-    let filled = ((value as f32 / max as f32) * width as f32).round() as usize;
-    let mut bar = "█".repeat(filled.min(width));
-    bar.push_str(&"░".repeat(width.saturating_sub(filled)));
-    bar
-}
-
 fn narrative_ticker(snapshot: &ObserverSnapshot) -> String {
     let mut snippets = Vec::new();
     for event in snapshot.events.iter().rev().take(3) {
