@@ -10,7 +10,7 @@ use ratatui::{
 use crate::simulation::events::WorldEventKind;
 use crate::simulation::{format_number_commas, Nation, ObserverSnapshot};
 use crate::ui::charts::{
-    build_metric_bar_data, heat_bar, render_evolutionary_charts, render_science_progress_panel,
+    heat_bar, render_evolutionary_charts, render_science_progress_panel,
 };
 use super::ControlState;
 
@@ -339,7 +339,10 @@ fn add_diplomacy_lines(
 }
 
 fn push_metric_bar(lines: &mut Vec<Line<'static>>, label: &str, value: f32, color: Color) {
-    lines.push(Line::from(Span::styled(label, Style::default())));
+    lines.push(Line::from(Span::styled(
+        label.to_string(),
+        Style::default(),
+    )));
     lines.push(create_bar(value, 100.0, 10, color));
 }
 
