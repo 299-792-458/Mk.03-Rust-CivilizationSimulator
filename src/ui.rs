@@ -473,7 +473,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     .header(header)
     .block(
         Block::default()
-            .title("Event Log — Check Left Panel for War Fatigue/Resource Richness")
+            .title("SIGINT FEED — engagements | trade | shocks")
             .borders(Borders::ALL),
     );
 
