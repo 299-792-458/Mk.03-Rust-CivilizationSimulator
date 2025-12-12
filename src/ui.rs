@@ -109,7 +109,7 @@ impl LogFilter {
 /// Renders UI and returns the map area used for click mapping.
 pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlState) -> Rect {
     // Force a uniform black background across the entire viewport.
-    let full_bg = Block::default().style(Style::default().bg(Color::Black));
+    let full_bg = Block::default().style(Style::default().bg(Color::Rgb(0, 0, 0)));
     frame.render_widget(full_bg, frame.size());
 
     // Main layout
