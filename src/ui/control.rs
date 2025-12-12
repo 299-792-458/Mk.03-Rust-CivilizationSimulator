@@ -267,8 +267,7 @@ pub fn render_control_deck(
         .block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Legend / Overlay")
-                .style(Style::default().bg(Color::Black).fg(Color::White)),
+                .title("Legend / Overlay"),
         )
         .wrap(Wrap { trim: true });
     frame.render_widget(legend, side[1]);
