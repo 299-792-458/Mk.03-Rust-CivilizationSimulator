@@ -5,7 +5,7 @@ mod panels;
 
 use crate::simulation::events::WorldEventKind;
 use crate::simulation::{AxialCoord, Nation, ObserverSnapshot, format_number_commas};
-use charts::{build_event_density_series, build_sentiment_series, render_indicator_grid};
+use charts::render_indicator_grid;
 use control::render_control_deck;
 use map::MapWidget;
 use panels::{
