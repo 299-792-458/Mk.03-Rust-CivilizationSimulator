@@ -4,7 +4,7 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, Borders, Cell, Paragraph, Row, Table, Wrap},
+    widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, Wrap},
 };
 
 use crate::simulation::events::WorldEventKind;
