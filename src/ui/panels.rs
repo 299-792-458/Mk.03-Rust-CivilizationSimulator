@@ -7,12 +7,10 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, Wrap},
 };
 
-use crate::simulation::events::WorldEventKind;
-use crate::simulation::{format_number_commas, Nation, ObserverSnapshot};
-use crate::ui::charts::{
-    heat_bar, render_evolutionary_charts, render_science_progress_panel,
-};
 use super::{ControlState, MODERN_THEME};
+use crate::simulation::events::WorldEventKind;
+use crate::simulation::{Nation, ObserverSnapshot, format_number_commas};
+use crate::ui::charts::{heat_bar, render_evolutionary_charts, render_science_progress_panel};
 
 pub fn render_world_state_panel(
     frame: &mut Frame,
@@ -25,7 +23,7 @@ pub fn render_world_state_panel(
         .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
         .border_type(BorderType::Rounded)
         .border_style(Style::default().fg(MODERN_THEME.border));
-    
+
     frame.render_widget(outer_block.clone(), area);
     let area = outer_block.inner(area); // Use inner area for content
 
@@ -238,10 +236,7 @@ pub fn render_world_state_panel(
                 Style::default().fg(Color::Cyan),
             )));
             nation_lines.push(Line::from(Span::styled(
-                format!(
-                    "  Population: {}",
-                    format_number_commas(metrics.population)
-                ),
+                format!("  Population: {}", format_number_commas(metrics.population)),
                 Style::default().fg(Color::White),
             )));
             if let Some(civ_state) = snapshot.civ_state.0.get(&nation) {
@@ -274,18 +269,48 @@ pub fn render_world_state_panel(
                     Style::default().fg(Color::Red).italic(),
                 )));
             } else {
-                push_metric_bar(&mut nation_lines, "  Economy", metrics.economy, nation_color);
-                push_metric_bar(&mut nation_lines, "  Science (Science)", metrics.science, nation_color);
-                push_metric_bar(&mut nation_lines, "  Culture", metrics.culture, nation_color);
+                push_metric_bar(
+                    &mut nation_lines,
+                    "  Economy",
+                    metrics.economy,
+                    nation_color,
+                );
+                push_metric_bar(
+                    &mut nation_lines,
+                    "  Science (Science)",
+                    metrics.science,
+                    nation_color,
+                );
+                push_metric_bar(
+                    &mut nation_lines,
+                    "  Culture",
+                    metrics.culture,
+                    nation_color,
+                );
                 push_metric_bar(
                     &mut nation_lines,
                     "  Diplomacy (Diplomacy)",
                     metrics.diplomacy,
                     nation_color,
                 );
-                push_metric_bar(&mut nation_lines, "  Religion", metrics.religion, nation_color);
-                push_metric_bar(&mut nation_lines, "  Military", metrics.military, nation_color);
-                push_metric_bar(&mut nation_lines, "  Territory", metrics.territory, nation_color);
+                push_metric_bar(
+                    &mut nation_lines,
+                    "  Religion",
+                    metrics.religion,
+                    nation_color,
+                );
+                push_metric_bar(
+                    &mut nation_lines,
+                    "  Military",
+                    metrics.military,
+                    nation_color,
+                );
+                push_metric_bar(
+                    &mut nation_lines,
+                    "  Territory",
+                    metrics.territory,
+                    nation_color,
+                );
             }
             let nation_paragraph = Paragraph::new(nation_lines).scroll((0, 0));
             frame.render_widget(nation_paragraph, nations_layout[i]);
@@ -434,7 +459,7 @@ pub fn render_event_leaderboard(frame: &mut Frame, area: Rect, snapshot: &Observ
             "Share",
             "Count ▓ | Casualties ░",
         ])
-            .style(Style::default().fg(Color::White).bold()),
+        .style(Style::default().fg(Color::White).bold()),
     )
     .block(
         Block::bordered()

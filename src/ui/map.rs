@@ -1,11 +1,7 @@
-use ratatui::{
-    prelude::*,
-    style::Stylize,
-    widgets::Widget,
-};
+use ratatui::{prelude::*, style::Stylize, widgets::Widget};
 
 use crate::simulation::{AxialCoord, Nation, ObserverSnapshot};
-use crate::ui::{MapOverlay, MODERN_THEME};
+use crate::ui::{MODERN_THEME, MapOverlay};
 
 const WORLD_ATLAS: &str = r#"
 ............................................................................................................................
@@ -191,15 +187,28 @@ impl<'a> Widget for MapWidget<'a> {
                 continue;
             }
             if self.snapshot.nuclear_hexes.contains(&coord) {
-                let glyph = if self.selected_hex == Some(coord) { "◎" } else { "◎" };
-                buf.set_string(screen_x as u16, screen_y as u16, glyph, Style::default().fg(Color::Yellow).bg(MODERN_THEME.bg));
+                let glyph = if self.selected_hex == Some(coord) {
+                    "◎"
+                } else {
+                    "◎"
+                };
+                buf.set_string(
+                    screen_x as u16,
+                    screen_y as u16,
+                    glyph,
+                    Style::default().fg(Color::Yellow).bg(MODERN_THEME.bg),
+                );
             } else if self.snapshot.combat_hexes.contains(&coord) {
                 let style = if tick % 2 == 0 {
                     Style::default().fg(Color::White).bg(MODERN_THEME.bg)
                 } else {
                     Style::default().fg(Color::Red).bg(MODERN_THEME.bg)
                 };
-                let glyph = if self.selected_hex == Some(coord) { "◎" } else { "✸" };
+                let glyph = if self.selected_hex == Some(coord) {
+                    "◎"
+                } else {
+                    "✸"
+                };
                 buf.set_string(screen_x as u16, screen_y as u16, glyph, style);
             }
         }

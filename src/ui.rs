@@ -34,11 +34,11 @@ pub struct Theme {
 pub const MODERN_THEME: Theme = Theme {
     bg: Color::Rgb(10, 10, 15), // Deep dark blue-black
     panel_bg: Color::Rgb(15, 15, 22),
-    border: Color::Rgb(60, 70, 90), // Slate gray
+    border: Color::Rgb(60, 70, 90),       // Slate gray
     text_main: Color::Rgb(225, 230, 240), // Off-white
-    text_dim: Color::Rgb(120, 130, 150), // Dim gray
-    accent_a: Color::Rgb(0, 190, 255), // Cyan
-    accent_b: Color::Rgb(255, 50, 150), // Pink/Magenta
+    text_dim: Color::Rgb(120, 130, 150),  // Dim gray
+    accent_a: Color::Rgb(0, 190, 255),    // Cyan
+    accent_b: Color::Rgb(255, 50, 150),   // Pink/Magenta
     success: Color::Rgb(50, 255, 120),
     warning: Color::Rgb(255, 200, 50),
     danger: Color::Rgb(255, 60, 80),
@@ -156,7 +156,10 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         Line::from(vec![
             Span::styled(
                 " COMMAND BRIDGE ",
-                Style::default().fg(MODERN_THEME.bg).bg(MODERN_THEME.accent_a).bold(),
+                Style::default()
+                    .fg(MODERN_THEME.bg)
+                    .bg(MODERN_THEME.accent_a)
+                    .bold(),
             ),
             Span::raw(" "),
             Span::styled(
@@ -191,10 +194,10 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
             ),
         ]),
     ];
-    
+
     // Add victory status if applicable
     if snapshot.science_victory.finished {
-         header_lines[0].spans.push(Span::styled(
+        header_lines[0].spans.push(Span::styled(
             " [VICTORY ACHIEVED]",
             Style::default().fg(MODERN_THEME.success).bold(),
         ));
@@ -204,7 +207,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         .borders(Borders::BOTTOM)
         .border_style(Style::default().fg(MODERN_THEME.border))
         .style(Style::default().bg(MODERN_THEME.bg)); // Blend with bg
-    
+
     let header_paragraph = Paragraph::new(header_lines).block(header_block);
     frame.render_widget(header_paragraph, main_layout[0]);
 
@@ -246,7 +249,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         .title_style(Style::default().fg(MODERN_THEME.accent_a).bold())
         .border_style(Style::default().fg(MODERN_THEME.border))
         .style(Style::default().bg(MODERN_THEME.bg)); // Ensure map bg is dark
-    
+
     let map_area = map_block.inner(left_column[0]);
     frame.render_widget(map_block, left_column[0]);
     frame.render_widget(map_widget, map_area);
@@ -296,17 +299,16 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
         .map(|event| {
             let (nation_cell, base_color) = match &event.kind {
                 WorldEventKind::Trade { actor, .. } => (
-                    Cell::from(actor.nation.name()).style(Style::default().fg(actor.nation.color())),
+                    Cell::from(actor.nation.name())
+                        .style(Style::default().fg(actor.nation.color())),
                     MODERN_THEME.success,
                 ),
                 WorldEventKind::Social { convener, .. } => (
-                    Cell::from(convener.nation.name()).style(Style::default().fg(convener.nation.color())),
+                    Cell::from(convener.nation.name())
+                        .style(Style::default().fg(convener.nation.color())),
                     MODERN_THEME.accent_a,
                 ),
-                WorldEventKind::MacroShock { .. } => (
-                    Cell::from("System"),
-                    MODERN_THEME.warning,
-                ),
+                WorldEventKind::MacroShock { .. } => (Cell::from("System"), MODERN_THEME.warning),
                 WorldEventKind::Warfare { winner, .. } => (
                     Cell::from(winner.name()).style(Style::default().fg(winner.color())),
                     MODERN_THEME.danger,
@@ -469,7 +471,7 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     render_diagnostics_strip(frame, event_layout[0], snapshot, control);
     render_event_leaderboard(frame, event_layout[1], snapshot);
     frame.render_widget(table, event_layout[2]);
-    
+
     map_area
 }
 
@@ -587,7 +589,11 @@ fn render_diagnostics_strip(
         Span::raw(" | "),
         Span::styled(
             format!("War Δ {:+.2}", war_trend),
-            Style::default().fg(if war_trend > 0.0 { MODERN_THEME.danger } else { MODERN_THEME.success }),
+            Style::default().fg(if war_trend > 0.0 {
+                MODERN_THEME.danger
+            } else {
+                MODERN_THEME.success
+            }),
         ),
         Span::raw(" | "),
         Span::styled(
@@ -600,11 +606,11 @@ fn render_diagnostics_strip(
             Style::default().fg(MODERN_THEME.success),
         ),
     ])];
-    
+
     let block = Block::default()
         .borders(Borders::BOTTOM)
         .border_style(Style::default().fg(MODERN_THEME.border));
-        
+
     frame.render_widget(Paragraph::new(lines).block(block), area);
 }
 

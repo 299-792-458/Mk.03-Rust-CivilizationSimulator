@@ -5,8 +5,8 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Cell, Paragraph, Row, Table, Wrap},
 };
 
-use crate::simulation::ObserverSnapshot;
 use super::{ControlState, MODERN_THEME};
+use crate::simulation::ObserverSnapshot;
 
 /// Renders the control deck with status, presets, and legend/meta info.
 pub fn render_control_deck(
@@ -196,7 +196,12 @@ pub fn render_control_deck(
         .split(columns[2]);
 
     let pulse = Paragraph::new(world_pulse_lines(snapshot))
-        .block(Block::bordered().border_type(BorderType::Rounded).border_style(Style::default().fg(MODERN_THEME.border)).title(" World Pulse "))
+        .block(
+            Block::bordered()
+                .border_type(BorderType::Rounded)
+                .border_style(Style::default().fg(MODERN_THEME.border))
+                .title(" World Pulse "),
+        )
         .wrap(Wrap { trim: true });
     frame.render_widget(pulse, side[0]);
 
@@ -288,7 +293,10 @@ pub fn world_pulse_lines(snapshot: &ObserverSnapshot) -> Vec<Line<'static>> {
         ),
         Span::raw(" | "),
         Span::styled(
-            format!("Space {:.2}00M yrs", snapshot.cosmic_age_years / 100_000_000.0),
+            format!(
+                "Space {:.2}00M yrs",
+                snapshot.cosmic_age_years / 100_000_000.0
+            ),
             Style::default().fg(Color::Cyan),
         ),
     ]));

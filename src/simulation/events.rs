@@ -145,7 +145,10 @@ impl WorldEvent {
                 catalyst,
                 projected_impact,
                 casualties
-                    .map(|c| format!(" | Casualties: {}", crate::simulation::format_number_commas(c)))
+                    .map(|c| format!(
+                        " | Casualties: {}",
+                        crate::simulation::format_number_commas(c)
+                    ))
                     .unwrap_or_default()
             ),
             WorldEventKind::Warfare {
