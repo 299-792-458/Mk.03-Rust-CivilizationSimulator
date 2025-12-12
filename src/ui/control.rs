@@ -2,11 +2,11 @@ use ratatui::{
     prelude::*,
     style::Stylize,
     text::{Line, Span},
-    widgets::{Block, Paragraph, Table, Wrap},
+    widgets::{Block, Borders, Cell, Paragraph, Row, Table, Wrap},
 };
 
 use crate::simulation::ObserverSnapshot;
-use super::{narrative_ticker, ControlState, MapOverlay, PresetStatus};
+use super::{ControlState, MapOverlay, PresetStatus};
 
 /// Renders the control deck with status, presets, and legend/meta info.
 pub fn render_control_deck(
