@@ -191,7 +191,8 @@ pub fn event_generation_system(
             circulation[(tick as usize + catalysts.len()) % circulation.len()].to_string();
 
         let casualties = if stressor.contains("plague") || stressor.contains("disease") {
-            Some(rng.gen_range(5_000..80_000))
+            // Plagues now hit much harder — large, sporadic die-off events.
+            Some(rng.gen_range(50_000..750_000))
         } else {
             None
         };
@@ -212,6 +213,37 @@ pub fn event_generation_system(
 
         event_log.push(WorldEvent::macro_shock(
             tick, epoch, season, stressor, catalyst, impact, casualties,
+        ));
+    }
+
+    // Catastrophic pulse: rare megaplague / cataclysm that slashes populations.
+    if rng.gen_bool(0.05) {
+        let severity = rng.gen_range(0.12..0.35); // 12–35% population loss
+        let mut total_casualties = 0u64;
+        for metrics in all_metrics.0.values_mut() {
+            if metrics.is_destroyed {
+                continue;
+            }
+            let loss = (metrics.population as f32 * severity) as u64;
+            total_casualties = total_casualties.saturating_add(loss);
+            metrics.population = metrics.population.saturating_sub(loss).max(10_000);
+        }
+        let catalyst = if rng.gen_bool(0.5) {
+            "Mutating pandemic sweeps megacities"
+        } else {
+            "Cascade disaster chain (quake/tsunami/famine)"
+        };
+        event_log.push(WorldEvent::macro_shock(
+            tick,
+            epoch,
+            season,
+            "Global die-off".to_string(),
+            catalyst.to_string(),
+            format!(
+                "Pop crash {:.0}% | Infrastructure disruption severe",
+                severity * 100.0
+            ),
+            Some(total_casualties),
         ));
     }
 }
