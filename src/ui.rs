@@ -261,7 +261,12 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
             .then(|| control.pinned_nation.or(control.selected_owner))
         .flatten(),
     };
-    frame.render_widget(map_widget, top_layout[1]);
+    let map_block = Block::default()
+        .borders(Borders::ALL)
+        .title("THEATER MAP — combat & control zones");
+    let map_area = map_block.inner(top_layout[1]);
+    frame.render_widget(map_block, top_layout[1]);
+    frame.render_widget(map_widget, map_area);
 
     render_indicator_grid(frame, content_layout[1], snapshot);
 
