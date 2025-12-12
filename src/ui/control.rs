@@ -5,9 +5,8 @@ use ratatui::{
     widgets::{Block, Paragraph, Table, Wrap},
 };
 
-use crate::simulation::format_number_commas;
-use crate::ui::{MapOverlay, PresetStatus};
-use crate::ui::{ControlState, ObserverSnapshot};
+use crate::simulation::ObserverSnapshot;
+use super::{narrative_ticker, ControlState, MapOverlay, PresetStatus};
 
 /// Renders the control deck with status, presets, and legend/meta info.
 pub fn render_control_deck(
