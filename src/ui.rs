@@ -618,17 +618,23 @@ fn render_diagnostics_strip(
         Span::raw(" · War Fatigue Δ "),
         Span::styled(
             format!("{:+.2}", war_trend),
-            Style::default().fg(Color::Red),
+            Style::default()
+                .fg(Color::Red)
+                .add_modifier(Modifier::RAPID_BLINK),
         ),
         Span::raw(" · Carbon Δ "),
         Span::styled(
             format!("{:+.1}", carbon_trend),
-            Style::default().fg(Color::Yellow),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::RAPID_BLINK),
         ),
         Span::raw(" · Population Δ "),
         Span::styled(
             format_number_commas(pop_trend.max(0.0) as u64),
-            Style::default().fg(Color::Green),
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::RAPID_BLINK),
         ),
         Span::raw(" · Alliances "),
         Span::styled(
