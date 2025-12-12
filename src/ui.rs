@@ -114,8 +114,8 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     let main_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
+            Constraint::Length(4),
             Constraint::Length(5),
-            Constraint::Length(6),
             Constraint::Min(0),
         ])
         .split(frame.size());
@@ -221,9 +221,9 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     let content_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Percentage(52),
-            Constraint::Length(12),
-            Constraint::Percentage(36),
+            Constraint::Percentage(60),
+            Constraint::Percentage(18),
+            Constraint::Percentage(22),
         ])
         .split(main_layout[2]);
 
@@ -465,8 +465,8 @@ pub fn render(frame: &mut Frame, snapshot: &ObserverSnapshot, control: &ControlS
     let event_layout = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),
-            Constraint::Length(5),
+            Constraint::Length(2),
+            Constraint::Length(4),
             Constraint::Min(0),
         ])
         .split(content_layout[1]);
