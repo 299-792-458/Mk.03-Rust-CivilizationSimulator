@@ -17,7 +17,6 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, Cell, Paragraph, Row, Table, Wrap},
 };
-use std::collections::HashMap;
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
