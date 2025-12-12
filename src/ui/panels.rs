@@ -8,12 +8,11 @@ use ratatui::{
 };
 
 use crate::simulation::events::WorldEventKind;
-use crate::simulation::{format_number_commas, Nation};
+use crate::simulation::{format_number_commas, Nation, ObserverSnapshot};
 use crate::ui::charts::{
-    build_metric_bar_data, heat_bar, render_evolutionary_charts, render_indicator_grid,
-    render_science_progress_panel,
+    build_metric_bar_data, heat_bar, render_evolutionary_charts, render_science_progress_panel,
 };
-use crate::ui::{ControlState, ObserverSnapshot};
+use super::ControlState;
 
 pub fn render_world_state_panel(
     frame: &mut Frame,
