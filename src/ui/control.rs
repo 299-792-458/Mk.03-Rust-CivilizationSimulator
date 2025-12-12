@@ -6,7 +6,7 @@ use ratatui::{
 };
 
 use crate::simulation::ObserverSnapshot;
-use super::{ControlState, MapOverlay, PresetStatus};
+use super::ControlState;
 
 /// Renders the control deck with status, presets, and legend/meta info.
 pub fn render_control_deck(
